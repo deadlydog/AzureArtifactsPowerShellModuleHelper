@@ -4,15 +4,15 @@
 .DESCRIPTION
 	Registers a PSRepository to the given Azure Artifacts feed if one does not already exist.
 .EXAMPLE
-	PS C:\> [string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl https://pkgs.dev.azure.com/YourOrg/_packaging/YourFeed/nuget/v2 -RepositoryName 'MyAzureArtifacts'
+	PS C:\> [string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2 -RepositoryName 'MyAzureArtifacts'
 	Attempts to create a PSRepository to the given FeedUrl if one doesn't exist.
 	If one does not exist, one will be created with the name `MyAzureArtifacts`.
 	Since no PersonalAccessToken (PAT) or Credential were provided, it will attempt to retrieve a PAT from the environmental variables.
 	The name of the PSRepository to the FeedUrl is returned.
 
-	PS C:\> [string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl https://pkgs.dev.azure.com/YourOrg/_packaging/YourFeed/nuget/v2 -PersonalAccessToken 'YourPatAsASecureString'
+	PS C:\> [string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2 -PersonalAccessToken 'YourPatAsASecureString'
 .INPUTS
-	FeedUrl: The URL of the Azure Artifacts PowerShell feed to register. e.g. https://pkgs.dev.azure.com/YourOrg/_packaging/YourFeed/nuget/v2
+	FeedUrl: The URL of the Azure Artifacts PowerShell feed to register. e.g. https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2
 
 	RepositoryName: The name to use for the PSRepository if one must be created. If not provided, one will be generated. A PSRepository with the given name will only be created if one to the Feed URL does not already exist.
 
@@ -31,7 +31,7 @@ function Register-AzureArtifactsPSRepository
 	[CmdletBinding(DefaultParameterSetName = 'PAT')]
 	param
 	(
-		[Parameter(Mandatory = $true, Position = 0, HelpMessage = 'The URL of the Azure Artifacts PowerShell feed to register. e.g. https://pkgs.dev.azure.com/YourOrg/_packaging/YourFeed/nuget/v2')]
+		[Parameter(Mandatory = $true, Position = 0, HelpMessage = 'The URL of the Azure Artifacts PowerShell feed to register. e.g. https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2')]
 		[ValidateNotNullOrEmpty()]
 		[string] $FeedUrl,
 
@@ -132,9 +132,9 @@ function Import-AzureArtifactsModule
 		[string] $Name,
 
 		[Parameter(Mandatory = $false, HelpMessage = 'The specific version of the PowerShell module to install (if necessary) and import. If not provided, the latest version will be used.')]
-		[System.Version] $Version = $null,
+		[string] $Version = $null,
 
-		[Parameter(Mandatory = $true, Position = 0, HelpMessage = 'The URL of the Azure Artifacts PowerShell feed to register. e.g. https://pkgs.dev.azure.com/YourOrg/_packaging/YourFeed/nuget/v2')]
+		[Parameter(Mandatory = $false, HelpMessage = 'The URL of the Azure Artifacts PowerShell feed the module is on. e.g. https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2')]
 		[ValidateNotNullOrEmpty()]
 		[string] $FeedUrl,
 
@@ -170,26 +170,26 @@ function Import-AzureArtifactsModule
 
 	Begin
 	{
-		function Install-ModuleVersion([string] $powerShellModuleName, [System.Version] $versionToInstall, [string] $repositoryName, [System.Management.Automation.PSCredential] $credential, [switch] $force)
+		function Install-ModuleVersion([string] $powerShellModuleName, [string] $versionToInstall, [string] $repositoryName, [System.Management.Automation.PSCredential] $credential, [switch] $force)
 		{
 			[string] $computerName = $Env:ComputerName
 
-			[System.Version[]] $currentModuleVersionsInstalled = (Get-Module -Name $powerShellModuleName -ListAvailable) | Select-Object -ExpandProperty 'Version' -Unique | Sort-Object -Descending | ForEach-Object { [System.Version]::Parse($_) }
+			[string[]] $currentModuleVersionsInstalled = (Get-Module -Name $powerShellModuleName -ListAvailable) | Select-Object -ExpandProperty 'Version' -Unique | Sort-Object -Descending }
 
-			[bool] $latestVersionShouldBeInstalled = [string]::IsNullOrWhitespace($versionToInstall)
+			[bool] $latestVersionShouldBeInstalled = ($null -eq $versionToInstall)
 			if ($latestVersionShouldBeInstalled)
 			{
 				$latestModuleVersionAvailable = (Find-Module -Name $powerShellModuleName -Repository $repositoryName -Credential $credential) | Select-Object -ExpandProperty 'Version' -First 1
-				$versionToInstall = [System.Version]::Parse($latestModuleVersionAvailable)
+				$versionToInstall = $latestModuleVersionAvailable
 			}
 			else
 			{
 				[bool] $specifiedVersionDoesNotExist = ($null -eq (Find-Module -Name $powerShellModuleName -RequiredVersion $versionToInstall -Repository $repositoryName -Credential $credential -ErrorAction SilentlyContinue))
 				if ($specifiedVersionDoesNotExist)
 				{
-					[System.Version] $existingLatestVersion = ($currentModuleVersionsInstalled | Select-Object -First 1)
+					[string] $existingLatestVersion = ($currentModuleVersionsInstalled | Select-Object -First 1)
 					Write-Error "The specified version '$versionToInstall' of PowerShell module '$powerShellModuleName' does not exist, so it cannot be installed on computer '$computerName'. Version '$existingLatestVersion' will be imported instead."
-					return
+					return $existingLatestVersion
 				}
 			}
 
