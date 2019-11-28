@@ -1,3 +1,31 @@
+<#
+.SYNOPSIS
+	Registers a PSRepository to the given Azure Artifacts feed if one does not already exist.
+.DESCRIPTION
+	Registers a PSRepository to the given Azure Artifacts feed if one does not already exist.
+.EXAMPLE
+	PS C:\> [string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl https://pkgs.dev.azure.com/YourOrg/_packaging/YourFeed/nuget/v2 -RepositoryName 'MyAzureArtifacts'
+	Attempts to create a PSRepository to the given FeedUrl if one doesn't exist.
+	If one does not exist, one will be created with the name `MyAzureArtifacts`.
+	Since no PersonalAccessToken (PAT) or Credential were provided, it will attempt to retrieve a PAT from the environmental variables.
+	The name of the PSRepository to the FeedUrl is returned.
+
+	PS C:\> [string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl https://pkgs.dev.azure.com/YourOrg/_packaging/YourFeed/nuget/v2 -PersonalAccessToken 'YourPatAsASecureString'
+.INPUTS
+	FeedUrl: The URL of the Azure Artifacts PowerShell feed to register. e.g. https://pkgs.dev.azure.com/YourOrg/_packaging/YourFeed/nuget/v2
+
+	RepositoryName: The name to use for the PSRepository if one must be created. If not provided, one will be generated. A PSRepository with the given name will only be created if one to the Feed URL does not already exist.
+
+	PersonalAccessToken: A personal access token that has Read permissions to the Azure Artifacts feed. If not provided, the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable will be checked, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables
+
+	Credential: The credential to use to connect to the Azure Artifacts feed.
+.OUTPUTS
+	System.String
+	Returns the Name of the PSRepository that can be used to connect to the given Feed URL.
+.NOTES
+	You cannot provide both PersonalAccessToken (PAT) and Credential. You must provide only one, or none.
+	If neither are provided, it will attempt to retrieve a PAT from the environment variables, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables
+#>
 function Register-AzureArtifactsPSRepository
 {
 	[CmdletBinding(DefaultParameterSetName = 'PAT')]
@@ -7,11 +35,11 @@ function Register-AzureArtifactsPSRepository
 		[ValidateNotNullOrEmpty()]
 		[string] $FeedUrl,
 
-		[Parameter(Mandatory = $false, HelpMessage = 'The name to use for the PSRepository. If not provided, one will be generated.')]
+		[Parameter(Mandatory = $false, HelpMessage = 'The name to use for the PSRepository if one must be created. If not provided, one will be generated. A PSRepository with the given name will only be created if one to the Feed URL does not already exist.')]
 		[string] $RepositoryName,
 
 		[Parameter(Mandatory = $false, ParameterSetName = 'PAT', HelpMessage = 'A personal access token that has Read permissions to the Azure Artifacts feed. If not provided, the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable will be checked, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables')]
-		[string] $PersonalAccessToken = $null,
+		[System.Security.SecureString] $PersonalAccessToken = $null,
 
 		[Parameter(Mandatory = $false, ParameterSetName = 'Credential', HelpMessage = 'The credential to use to connect to the Azure Artifacts feed.')]
 		[System.Management.Automation.PSCredential] $Credential = $null
@@ -21,66 +49,75 @@ function Register-AzureArtifactsPSRepository
 	{
 		if ([string]::IsNullOrWhitespace($RepositoryName))
 		{
-			$RepositoryName = Get-RandomCharacters
+			[string] $organizationAndFeed = Get-AzureArtifactOrganizationAndFeedFromUrl -feedUrl $FeedUrl
+			$RepositoryName = ('AzureArtifacts-' + $organizationAndFeed).TrimEnd('-')
 		}
 
-		[System.Management.Automation.PSCredential] $Credential = Get-AzureArtifactsCredentials -personalAccessToken $PersonalAccessToken -credential $Credential
+		$Credential = Get-AzureArtifactsCredential -personalAccessToken $PersonalAccessToken -credential $Credential
 
-		Register-AzureArtifactsPowerShellRepository -feedUrl $FeedUrl -repositoryName $RepositoryName -credential $Credential
-		return $RepositoryName
+		Install-NuGetPackageProvider
+
+		[string] $repositoryNameOfFeed = Register-AzureArtifactsPowerShellRepository -feedUrl $FeedUrl -repositoryName $RepositoryName -credential $Credential
+
+		return $repositoryNameOfFeed
 	}
 
 	Begin
 	{
 		function Register-AzureArtifactsPowerShellRepository([string] $feedUrl, [string] $repositoryName, [System.Management.Automation.PSCredential] $credential)
 		{
-			if ($null -eq (Get-PackageProvider NuGet -ErrorAction SilentlyContinue))
-			{
-				Write-Information 'Installing NuGet package provider.'
-				Install-PackageProvider NuGet -Scope CurrentUser -Force > $null
-			}
-
 			$psRepositories = Get-PSRepository
 
-			[bool] $psRepositoryIsAlreadyRegistered = ($null -ne ($psRepositories | Where-Object { $_.Name -ieq $repositoryName -and $_.SourceLocation -ieq $feedUrl -and $_.InstallationPolicy -ieq 'Trusted' }))
+			[PSCustomObject] $existingPsRepositoryOfFeed = $psRepositories | Where-Object { $_.SourceLocation -ieq $feedUrl }
+			[bool] $psRepositoryIsAlreadyRegistered = ($null -ne $existingPsRepositoryOfFeed)
 			if ($psRepositoryIsAlreadyRegistered)
 			{
-				return
+				return $existingPsRepositoryOfFeed.Name
 			}
 
 			if ($null -eq $credential)
 			{
 				[string] $computerName = $Env:ComputerName
-				Write-Error "A personal access token was not found, so we cannot register a PSRepository to connect to '$feedUrl' on '$computerName'."
+				throw "A personal access token was not found, so we cannot register a new PSRepository to connect to '$feedUrl' on '$computerName'."
 			}
 
-			Remove-PsRepositoriesWithSameNameOrFeed -Name $repositoryName -feedUrl $feedUrl -psRepositories $psRepositories
+			[PSCustomObject] $existingPsRepositoryWithSameName = $psRepositories | Where-Object { $_.Name -ieq $repositoryName }
+			[bool] $psRepositoryWithDesiredNameAlreadyExists = ($null -ne $existingPsRepositoryWithSameName)
+			if ($psRepositoryWithDesiredNameAlreadyExists)
+			{
+				$repositoryName += '-' + (Get-RandomCharacters -length 3)
+			}
 
 			Register-PSRepository -Name $repositoryName -SourceLocation $feedUrl -InstallationPolicy Trusted -Credential $credential > $null
-		}
 
-		function Remove-PsRepositoriesWithSameNameOrFeed([string] $name, [string] $feedUrl, $psRepositories)
-		{
-			# [bool] $psRepositoryWasRemoved = $false
-			$psRepositories | ForEach-Object {
-				$psRepository = $_
-				[string] $psRepositoryName = $psRepository.Name
-				[string] $psRepositoryFeed = $psRepository.SourceLocation
-
-				if ($psRepositoryName -ieq $name -or $psRepositoryFeed -ieq $feedUrl)
-				{
-					Write-Warning "The existing PSRepository '$psRepositoryName' with feed '$psRepositoryFeed' has the same name or feed URL as the one requested to be added: '$name' '$feedUrl'. Removing PSRepository '$psRepositoryName'."
-					Unregister-PSRepository -Name $psRepositoryName
-					# $psRepositoryWasRemoved = $true
-				}
-			}
-			# return $psRepositoryWasRemoved
+			return $repositoryName
 		}
 
 		function Get-RandomCharacters([int] $length = 8)
 		{
 			[string] $word = (-join ((65..90) + (97..122) | Get-Random -Count $length | ForEach-Object { [char]$_ }))
 			return $word
+		}
+
+		function Get-AzureArtifactOrganizationAndFeedFromUrl([string] $feedUrl)
+		{
+			# Azure Artifact feed URLs are of the format: 'https://pkgs.dev.azure.com/Organization/_packaging/Feed/nuget/v2'
+			[bool] $urlMatchesRegex = $feedUrl -match 'https\:\/\/pkgs.dev.azure.com\/(?<Organization>.+?)\/_packaging\/(?<Feed>.+?)\/'
+			if ($urlMatchesRegex)
+			{
+				return $Matches.Organization + '-' + $Matches.Feed
+			}
+			return [string]::Empty
+		}
+
+		function Install-NuGetPackageProvider
+		{
+			[bool] $nuGetPackageProviderIsNotInstalled = ($null -eq (Get-PackageProvider | Where-Object { $_.Name -ieq 'NuGet' }))
+			if ($nuGetPackageProviderIsNotInstalled)
+			{
+				Write-Information 'Installing NuGet package provider.'
+				Install-PackageProvider NuGet -Scope CurrentUser -Force > $null
+			}
 		}
 	}
 }
@@ -97,6 +134,13 @@ function Import-AzureArtifactsModule
 		[Parameter(Mandatory = $false, HelpMessage = 'The specific version of the PowerShell module to install (if necessary) and import. If not provided, the latest version will be used.')]
 		[System.Version] $Version = $null,
 
+		[Parameter(Mandatory = $true, Position = 0, HelpMessage = 'The URL of the Azure Artifacts PowerShell feed to register. e.g. https://pkgs.dev.azure.com/YourOrg/_packaging/YourFeed/nuget/v2')]
+		[ValidateNotNullOrEmpty()]
+		[string] $FeedUrl,
+
+		[Parameter(Mandatory = $false, HelpMessage = 'The name to use for the PSRepository if one must be created. If not provided, one will be generated. A PSRepository with the given name will only be created if one to the Feed URL does not already exist.')]
+		[string] $RepositoryName,
+
 		[Parameter(Mandatory = $false, ParameterSetName = 'PAT', HelpMessage = 'A personal access token that has Read permissions to the Azure Artifacts feed. If not provided, the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable will be checked, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables')]
 		[string] $PersonalAccessToken = $null,
 
@@ -109,12 +153,12 @@ function Import-AzureArtifactsModule
 
 	Process
 	{
-		[System.Management.Automation.PSCredential] $credential = Get-AzureArtifactsCredentials -personalAccessToken $PersonalAccessToken
+		$Credential = Get-AzureArtifactsCredential -personalAccessToken $PersonalAccessToken -credential $Credential
 
 		if ($null -eq $credential)
 		{
 			[string] $computerName = $Env:ComputerName
-			Write-Error "A personal access token was not found, so we cannot ensure a specific version of PowerShell module '$Name' is installed on '$computerName'."
+			Write-Error "A personal access token was not found, so we cannot ensure a specific version (or the latest version) of PowerShell module '$Name' is installed on '$computerName'."
 		}
 		else
 		{
@@ -161,30 +205,30 @@ function Import-AzureArtifactsModule
 	}
 }
 
-function Get-AzureArtifactsCredentials([string] $personalAccessToken = $null, [System.Management.Automation.PSCredential] $credential = $null)
+function Get-AzureArtifactsCredential([System.Security.SecureString] $personalAccessToken = $null, [System.Management.Automation.PSCredential] $credential = $null)
 {
 	if ($null -ne $credential)
 	{
 		return $credential
 	}
 
-	if ([string]::IsNullOrWhiteSpace($personalAccessToken))
+	if ($null -eq $personalAccessToken)
 	{
-		$personalAccessToken = Get-PersonalAccessTokenFromEnvironmentVariable
+		$personalAccessToken = Get-SecurePersonalAccessTokenFromEnvironmentVariable
 	}
 
-	if (![string]::IsNullOrWhiteSpace($personalAccessToken))
+	if ($null -ne $personalAccessToken)
 	{
-		$pat = ConvertTo-SecureString $PersonalAccessToken -AsPlainText -Force
-		$credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $pat
+		$credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $personalAccessToken
 	}
 
 	return $credential
 }
 
 # Microsoft recommends storing the PAT in an environment variable: https://github.com/Microsoft/artifacts-credprovider#environment-variables
-function Get-PersonalAccessTokenFromEnvironmentVariable
+function Get-SecurePersonalAccessTokenFromEnvironmentVariable
 {
+	[System.Security.SecureString] $securePersonalAccessToken = $null
 	[string] $personalAccessToken = [string]::Empty
 	[string] $computerName = $Env:ComputerName
 	[string] $patJsonValue = $Env:VSS_NUGET_EXTERNAL_FEED_ENDPOINTS
@@ -197,12 +241,16 @@ function Get-PersonalAccessTokenFromEnvironmentVariable
 		{
 			Write-Warning "Found the environmental variable 'VSS_NUGET_EXTERNAL_FEED_ENDPOINTS' on computer '$computerName', but could not retrieve the Personal Access Token from it."
 		}
+		else
+		{
+			$securePersonalAccessToken = ConvertTo-SecureString $personalAccessToken -AsPlainText -Force
+		}
 	}
 	else
 	{
 		Write-Warning "Could not find the environment variable 'VSS_NUGET_EXTERNAL_FEED_ENDPOINTS' on computer '$computerName' to extract the Personal Access Token from it."
 	}
-	return $personalAccessToken
+	return $securePersonalAccessToken
 }
 
 Export-ModuleMember -Function Import-AzureArtifactsModule
