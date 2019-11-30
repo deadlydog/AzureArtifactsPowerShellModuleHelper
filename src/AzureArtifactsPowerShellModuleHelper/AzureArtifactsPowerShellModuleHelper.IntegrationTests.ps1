@@ -11,12 +11,16 @@ Set-StrictMode -Version Latest
 Write-Verbose "Importing the module file '$moduleFilePathToTest' to run tests against it." -Verbose
 Import-Module -Name $moduleFilePathToTest -Force
 
-# You will need to update this value to your actual feed URL, module, and versions.
+###########################################################
+# You will need to update the following variables with info to pull a real package down from a real feed.
+###########################################################
 # [string] $FeedUrl = 'https://pkgs.dev.azure.com/Organization/_packaging/Feed/nuget/v2'
 [string] $FeedUrl = 'https://pkgs.dev.azure.com/iqmetrix/_packaging/iqmetrix/nuget/v2'
 [string] $PowerShellModuleName = 'IQ.DataCenter.ServerConfiguration'
-[string] $ValidModuleVersionToImport = '1.0.40'
-[string] $InvalidModuleVersionToImport = '1.0.99999'
+[string] $ValidModuleVersionThatExists = '1.0.40'
+[string] $InvalidModuleVersionThatDoesNotExist = '1.0.99999'
+[System.Security.SecureString] $SecurePersonalAccessToken = 'YourPatGoesHereButDoNotCommitItToSourceControl' | ConvertTo-SecureString $personalAccessToken -AsPlainText -Force
+[System.Management.Automation.PSCredential] $Credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $SecurePersonalAccessToken
 
 function Remove-PsRepository([string] $feedUrl)
 {
@@ -28,13 +32,37 @@ function Remove-PsRepository([string] $feedUrl)
 }
 
 Describe 'Registering an Azure Artifacts PS Repository' {
-	It 'Should register a new PS repository properly' {
+	It 'Should register a new PS repository properly when relying in PAT from environmental variable' {
 		# Arrange.
 		[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
 		Remove-PsRepository -feedUrl $FeedUrl
 
 		# Act.
 		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName $expectedRepositoryName
+
+		# Assert.
+		$repositoryName | Should -Be $expectedRepositoryName
+	}
+
+	It 'Should register a new PS repository properly when passing in a valid PAT' {
+		# Arrange.
+		[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
+		Remove-PsRepository -feedUrl $FeedUrl
+
+		# Act.
+		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName $expectedRepositoryName -PersonalAccessToken $SecurePersonalAccessToken
+
+		# Assert.
+		$repositoryName | Should -Be $expectedRepositoryName
+	}
+
+	It 'Should register a new PS repository properly when passing in a valid credential' {
+		# Arrange.
+		[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
+		Remove-PsRepository -feedUrl $FeedUrl
+
+		# Act.
+		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName $expectedRepositoryName -Credential $Credential
 
 		# Assert.
 		$repositoryName | Should -Be $expectedRepositoryName
@@ -103,7 +131,7 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 	It 'Should import the specified version properly' {
 		# Arrange.
 		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
-		[ScriptBlock] $action = { Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -Version $ValidModuleVersionToImport }
+		[ScriptBlock] $action = { Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -Version $ValidModuleVersionThatExists }
 		Remove-Module -Name $PowerShellModuleName -Force -ErrorAction SilentlyContinue
 		Get-Module -Name $PowerShellModuleName | Should -BeNullOrEmpty
 
@@ -111,14 +139,14 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 		$action | Should -Not -Throw
 		$module = Get-Module -Name $PowerShellModuleName
 		$module | Should -Not -BeNullOrEmpty
-		$module.Version | Should -Be $ValidModuleVersionToImport
+		$module.Version | Should -Be $ValidModuleVersionThatExists
 	}
 
 	# Could not get this one to work, as it complains that the module is in use so it's not able to uninstall it to do a proper test.
 	# It 'Should throw an error when trying to import a version that does not exist and no different version exists' {
 	# 	# Arrange.
 	# 	[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
-	# 	[ScriptBlock] $action = { Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -Version $InvalidModuleVersionToImport }
+	# 	[ScriptBlock] $action = { Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -Version $InvalidModuleVersionThatDoesNotExist }
 	# 	Remove-Module -Name $PowerShellModuleName -Force
 	# 	Uninstall-Module -Name $PowerShellModuleName -Force -AllVersions
 	# 	Write-Host "Versions: " + (Get-Module -Name $PowerShellModuleName -ListAvailable | Format-Table | Out-String)
@@ -135,7 +163,7 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 		Get-Module -Name $PowerShellModuleName -ListAvailable | Should -Not -BeNullOrEmpty
 
 		# Act
-		Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -Version $InvalidModuleVersionToImport -ErrorAction SilentlyContinue -ErrorVariable err
+		Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -Version $InvalidModuleVersionThatDoesNotExist -ErrorAction SilentlyContinue -ErrorVariable err
 
 		# Assert.
 		$err.Count | Should -BeGreaterThan 0
