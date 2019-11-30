@@ -19,7 +19,8 @@ Import-Module -Name $moduleFilePathToTest -Force
 [string] $PowerShellModuleName = 'IQ.DataCenter.ServerConfiguration'
 [string] $ValidModuleVersionThatExists = '1.0.40'
 [string] $InvalidModuleVersionThatDoesNotExist = '1.0.99999'
-[System.Security.SecureString] $SecurePersonalAccessToken = 'YourPatGoesHereButDoNotCommitItToSourceControl' | ConvertTo-SecureString $personalAccessToken -AsPlainText -Force
+# DO NOT commit your real PAT to source control!
+[System.Security.SecureString] $SecurePersonalAccessToken = 'YourPatGoesHereButDoNotCommitItToSourceControl' | ConvertTo-SecureString -AsPlainText -Force
 [System.Management.Automation.PSCredential] $Credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $SecurePersonalAccessToken
 
 function Remove-PsRepository([string] $feedUrl)
@@ -56,7 +57,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 		$repositoryName | Should -Be $expectedRepositoryName
 	}
 
-	It 'Should register a new PS repository properly when passing in a valid credential' {
+	It 'Should register a new PS repository properly when passing in a valid Credential' {
 		# Arrange.
 		[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
 		Remove-PsRepository -feedUrl $FeedUrl
