@@ -16,7 +16,7 @@ Import-Module -Name $moduleFilePathToTest -Force
 [string] $FeedUrl = 'https://pkgs.dev.azure.com/iqmetrix/_packaging/iqmetrix/nuget/v2'
 [string] $PowerShellModuleName = 'IQ.DataCenter.ServerConfiguration'
 [string] $ValidModuleVersionToImport = '1.0.40'
-[string] $InvalidModuleVersionToImport = '1.0.40'
+[string] $InvalidModuleVersionToImport = '1.0.99999'
 
 function Remove-PsRepository([string] $feedUrl)
 {
@@ -131,17 +131,16 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 	It 'Should write an error and continue when trying to import a version that does not exist, but a different version exists' {
 		# Arrange.
 		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
-		[ScriptBlock] $action = {
-			Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -Version $InvalidModuleVersionToImport -ErrorVariable errorMessage
-			Write-Host "Error is: " + $errorMessage
-			return $errorMessage
-		}
 		Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName
 		Get-Module -Name $PowerShellModuleName -ListAvailable | Should -Not -BeNullOrEmpty
 
-		# Act and Assert.
-		[string] $errorMessage = $action | Should -Not -Throw
-		$errorMessage | Should -Match 'is already installed and will be imported instead.'
+		# Act
+		Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -Version $InvalidModuleVersionToImport -ErrorAction SilentlyContinue -ErrorVariable err
+
+		# Assert.
+		$err.Count | Should -BeGreaterThan 0
+		[string] $errors = $err | ForEach-Object { $_.ToString() }
+		$errors | Should -Match 'is already installed and will be imported instead.'
 	}
 
 	It 'Should throw an error when trying to import a module that does not exist' {
@@ -156,17 +155,16 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 	It 'Should write an error and continue when an invalid RepositoryName is specified, but the module is already installed' {
 		# Arrange.
 		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
-		[ScriptBlock] $action = {
-			Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName 'InvalidRepositoryName' -ErrorVariable errorMessage
-			Write-Host "Error is: " + $errorMessage
-			return $errorMessage
-		}
 		Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName
 		Get-Module -Name $PowerShellModuleName -ListAvailable | Should -Not -BeNullOrEmpty
 
+		# Act.
+		Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName 'InvalidRepositoryName' -ErrorAction SilentlyContinue -ErrorVariable err
+
 		# Act and Assert.
-		[string] $errorMessage = $action | Should -Not -Throw
-		$errorMessage | Should -Match 'though so it will be used.'
+		$err.Count | Should -BeGreaterThan 0
+		[string] $errors = $err | ForEach-Object { $_.ToString() }
+		$errors | Should -Match "Version '.+?' is installed on computer '.+?' though so it will be used.*" #'though so it will be used.'
 	}
 
 	It 'Should allow Prerelease versions to be installed' {
