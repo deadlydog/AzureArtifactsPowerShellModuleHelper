@@ -11,7 +11,7 @@ Set-StrictMode -Version Latest
 Write-Verbose "Importing the module file '$moduleFilePathToTest' to run tests against it." -Verbose
 Import-Module -Name $moduleFilePathToTest -Force
 
-# You will need to update this value to your actual feed URL.
+# You will need to update this value to your actual feed URL, module, and versions.
 # [string] $FeedUrl = 'https://pkgs.dev.azure.com/Organization/_packaging/Feed/nuget/v2'
 [string] $FeedUrl = 'https://pkgs.dev.azure.com/iqmetrix/_packaging/iqmetrix/nuget/v2'
 [string] $PowerShellModuleName = 'IQ.DataCenter.ServerConfiguration'
@@ -27,53 +27,53 @@ function Remove-PsRepository([string] $feedUrl)
 	}
 }
 
-# Describe 'Registering an Azure Artifacts PS Repository' {
-# 	It 'Should register a new PS repository properly' {
-# 		# Arrange.
-# 		[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
-# 		Remove-PsRepository -feedUrl $FeedUrl
+Describe 'Registering an Azure Artifacts PS Repository' {
+	It 'Should register a new PS repository properly' {
+		# Arrange.
+		[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
+		Remove-PsRepository -feedUrl $FeedUrl
 
-# 		# Act.
-# 		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName $expectedRepositoryName
+		# Act.
+		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName $expectedRepositoryName
 
-# 		# Assert.
-# 		$repositoryName | Should -Be $expectedRepositoryName
-# 	}
+		# Assert.
+		$repositoryName | Should -Be $expectedRepositoryName
+	}
 
-# 	It 'Should return an existing PS repository properly when no RepositoryName is specified' {
-# 		# Arrange.
-# 		[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
-# 		Remove-PsRepository -feedUrl $FeedUrl
-# 		Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName $expectedRepositoryName
+	It 'Should return an existing PS repository properly when no RepositoryName is specified' {
+		# Arrange.
+		[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
+		Remove-PsRepository -feedUrl $FeedUrl
+		Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName $expectedRepositoryName
 
-# 		# Act.
-# 		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
+		# Act.
+		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
 
-# 		# Assert.
-# 		$repositoryName | Should -Be $expectedRepositoryName
-# 	}
+		# Assert.
+		$repositoryName | Should -Be $expectedRepositoryName
+	}
 
-# 	It 'Should return an existing PS repository properly when a different RepositoryName is specified' {
-# 		# Arrange.
-# 		[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
-# 		Remove-PsRepository -feedUrl $FeedUrl
-# 		Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName $expectedRepositoryName
+	It 'Should return an existing PS repository properly when a different RepositoryName is specified' {
+		# Arrange.
+		[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
+		Remove-PsRepository -feedUrl $FeedUrl
+		Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName $expectedRepositoryName
 
-# 		# Act.
-# 		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName 'NameThatShouldNotEndUpInThePSRepositories'
+		# Act.
+		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName 'NameThatShouldNotEndUpInThePSRepositories'
 
-# 		# Assert.
-# 		$repositoryName | Should -Be $expectedRepositoryName
-# 	}
+		# Assert.
+		$repositoryName | Should -Be $expectedRepositoryName
+	}
 
-# 	It 'Should throw an error if both a PersonalAccessToken and a Credential are provided' {
-# 		# Arrange.
-# 		[ScriptBlock] $action = { Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -PersonalAccessToken $null -Credential $null }
+	It 'Should throw an error if both a PersonalAccessToken and a Credential are provided' {
+		# Arrange.
+		[ScriptBlock] $action = { Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -PersonalAccessToken $null -Credential $null }
 
-# 		# Act and Assert.
-# 		$action | Should -Throw 'Parameter set cannot be resolved using the specified named parameters.'
-# 	}
-# }
+		# Act and Assert.
+		$action | Should -Throw 'Parameter set cannot be resolved using the specified named parameters.'
+	}
+}
 
 Describe 'Importing a PowerShell module from Azure Artifacts' {
 	It 'Should import the module properly' {
