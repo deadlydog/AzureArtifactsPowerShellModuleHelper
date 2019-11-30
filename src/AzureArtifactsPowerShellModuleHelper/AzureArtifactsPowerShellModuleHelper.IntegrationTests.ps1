@@ -1,8 +1,8 @@
 # These are Integration tests (not unit tests).
 # This means that these tests will actually reach out to the specified $FeedUrl and connect/authenticate against it.
 # In order for these tests to run successfully:
-#	- You need to use a real Azure Artifacts $FeedUrl.
-#	- You need to have a real Personal Access Token in your environmental variables: https://github.com/Microsoft/artifacts-credprovider#environment-variables
+#	- You need to use a real Azure Artifacts $FeedUrl and a real module to import from it.
+#	- You need to have a real Personal Access Token, both in the variables below and in your environmental variables: https://github.com/Microsoft/artifacts-credprovider#environment-variables
 # Ideally we would mock out any external/infrastructure dependencies; I just haven't had time to yet so for now hit the real dependencies.
 
 Set-StrictMode -Version Latest
