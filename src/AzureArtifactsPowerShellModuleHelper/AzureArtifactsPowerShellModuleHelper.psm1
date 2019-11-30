@@ -38,7 +38,7 @@ function Register-AzureArtifactsPSRepository
 		[Parameter(Mandatory = $false, HelpMessage = 'The name to use for the PSRepository if one must be created. If not provided, one will be generated. A PSRepository with the given name will only be created if one to the Feed URL does not already exist.')]
 		[string] $RepositoryName,
 
-		[Parameter(Mandatory = $false, ParameterSetName = 'PAT', HelpMessage = 'A personal access token that has Read permissions to the Azure Artifacts feed. If not provided, the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable will be checked, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables')]
+		[Parameter(Mandatory = $false, ParameterSetName = 'PAT', HelpMessage = 'A personal access token that has Read permissions to the Azure Artifacts feed. This must be provided as a [System.Security.SecureString]. If not provided, the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable will be checked, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables')]
 		[System.Security.SecureString] $PersonalAccessToken = $null,
 
 		[Parameter(Mandatory = $false, ParameterSetName = 'Credential', HelpMessage = 'The credential to use to connect to the Azure Artifacts feed.')]
@@ -134,15 +134,11 @@ function Import-AzureArtifactsModule
 		[Parameter(Mandatory = $false, HelpMessage = 'The specific version of the PowerShell module to install (if necessary) and import. If not provided, the latest version will be used.')]
 		[string] $Version = $null,
 
-		[Parameter(Mandatory = $false, HelpMessage = 'The URL of the Azure Artifacts PowerShell feed the module is on. e.g. https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2')]
-		[ValidateNotNullOrEmpty()]
-		[string] $FeedUrl,
-
-		[Parameter(Mandatory = $false, HelpMessage = 'The name to use for the PSRepository if one must be created. If not provided, one will be generated. A PSRepository with the given name will only be created if one to the Feed URL does not already exist.')]
+		[Parameter(Mandatory = $true, HelpMessage = 'The name to use for the PSRepository that contains the module to import. This should be obtained from the Register-AzureArtifactsPSRepository cmdlet.')]
 		[string] $RepositoryName,
 
-		[Parameter(Mandatory = $false, ParameterSetName = 'PAT', HelpMessage = 'A personal access token that has Read permissions to the Azure Artifacts feed. If not provided, the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable will be checked, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables')]
-		[string] $PersonalAccessToken = $null,
+		[Parameter(Mandatory = $false, ParameterSetName = 'PAT', HelpMessage = 'A personal access token that has Read permissions to the Azure Artifacts feed. This must be provided as a [System.Security.SecureString]. If not provided, the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable will be checked, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables')]
+		[System.Security.SecureString] $PersonalAccessToken = $null,
 
 		[Parameter(Mandatory = $false, ParameterSetName = 'Credential', HelpMessage = 'The credential to use to connect to the Azure Artifacts feed.')]
 		[System.Management.Automation.PSCredential] $Credential = $null,
@@ -162,10 +158,9 @@ function Import-AzureArtifactsModule
 		}
 		else
 		{
-			Register-AzureArtifactsPSRepository -RepositoryName $repositoryName -Credential $credential
-			$Version = Install-ModuleVersion -powerShellModuleName $Name -versionToInstall $Version -credential $credential -force:$Force
+			$Version = Install-ModuleVersion -powerShellModuleName $Name -versionToInstall $Version -repositoryName $RepositoryName -credential $credential -force:$Force
 		}
-		Import-Module -Name $Name -RequiredVersion $Version -Force
+		Import-Module -Name $Name -RequiredVersion $Version -Global -Force
 	}
 
 	Begin
@@ -174,12 +169,39 @@ function Import-AzureArtifactsModule
 		{
 			[string] $computerName = $Env:ComputerName
 
-			[string[]] $currentModuleVersionsInstalled = (Get-Module -Name $powerShellModuleName -ListAvailable) | Select-Object -ExpandProperty 'Version' -Unique | Sort-Object -Descending }
+			[string[]] $currentModuleVersionsInstalled = (Get-Module -Name $powerShellModuleName -ListAvailable) | Select-Object -ExpandProperty 'Version' -Unique | Sort-Object -Descending
 
-			[bool] $latestVersionShouldBeInstalled = ($null -eq $versionToInstall)
+			[bool] $specificVersionWasRequestedAndIsAlreadyInstalled = ((![string]::IsNullOrWhitespace($versionToInstall)) -and $versionToInstall -in $currentModuleVersionsInstalled)
+			if ($specificVersionWasRequestedAndIsAlreadyInstalled)
+			{
+				if (!$force)
+				{
+					return $versionToInstall
+				}
+			}
+
+			[string] $existingLatestVersion = ($currentModuleVersionsInstalled | Select-Object -First 1)
+			[bool] $moduleIsInstalledOnComputerAlready = ![string]::IsNullOrWhitespace($existingLatestVersion)
+
+			[bool] $latestVersionShouldBeInstalled = [string]::IsNullOrWhitespace($versionToInstall)
 			if ($latestVersionShouldBeInstalled)
 			{
-				$latestModuleVersionAvailable = (Find-Module -Name $powerShellModuleName -Repository $repositoryName -Credential $credential) | Select-Object -ExpandProperty 'Version' -First 1
+				[string] $latestModuleVersionAvailable = Get-LatestAvailableVersion -powerShellModuleName $powerShellModuleName -repositoryName $repositoryName -credential $credential
+
+				[bool] $moduleWasNotFoundInPsRepository = [string]::IsNullOrWhitespace($latestModuleVersionAvailable)
+				if ($moduleWasNotFoundInPsRepository)
+				{
+					if ($moduleIsInstalledOnComputerAlready)
+					{
+						Write-Error "The PowerShell module '$powerShellModuleName' could not be found in the PSRepository '$repositoryName', so the latest version of the module could not be obtained. Version '$existingLatestVersion' is installed on computer '$computerName' though so it will be used."
+						return $existingLatestVersion
+					}
+					else
+					{
+						throw "The PowerShell module '$powerShellModuleName' could not be found in the PSRepository '$repositoryName' so it cannot be downloaded and installed, and it is not already installed on computer '$computerName', so it cannot be imported."
+					}
+				}
+
 				$versionToInstall = $latestModuleVersionAvailable
 			}
 			else
@@ -187,9 +209,25 @@ function Import-AzureArtifactsModule
 				[bool] $specifiedVersionDoesNotExist = ($null -eq (Find-Module -Name $powerShellModuleName -RequiredVersion $versionToInstall -Repository $repositoryName -Credential $credential -ErrorAction SilentlyContinue))
 				if ($specifiedVersionDoesNotExist)
 				{
-					[string] $existingLatestVersion = ($currentModuleVersionsInstalled | Select-Object -First 1)
-					Write-Error "The specified version '$versionToInstall' of PowerShell module '$powerShellModuleName' does not exist, so it cannot be installed on computer '$computerName'. Version '$existingLatestVersion' will be imported instead."
-					return $existingLatestVersion
+					if ($moduleIsInstalledOnComputerAlready)
+					{
+						Write-Error "The specified version '$versionToInstall' of PowerShell module '$powerShellModuleName' does not exist in the PSRepository '$repositoryName', so it cannot be installed on computer '$computerName'. Version '$existingLatestVersion' is already installed and will be imported instead."
+						return $existingLatestVersion
+					}
+					else
+					{
+						[string] $latestModuleVersionAvailable = Get-LatestAvailableVersion -powerShellModuleName $powerShellModuleName -repositoryName $repositoryName -credential $credential
+
+						[bool] $moduleWasNotFoundInPsRepository = [string]::IsNullOrWhitespace($latestModuleVersionAvailable)
+						if ($moduleWasNotFoundInPsRepository)
+						{
+							throw "The PowerShell module '$powerShellModuleName' could not be found in the PSRepository '$repositoryName' so it cannot be downloaded and installed, and it is not already installed on computer '$computerName', so it cannot be imported."
+						}
+
+						Write-Error "The specified version '$versionToInstall' of PowerShell module '$powerShellModuleName' does not exist in the PSRepository '$repositoryName'. Version '$latestModuleVersionAvailable' will be installed instead."
+
+						$versionToInstall = $latestModuleVersionAvailable
+					}
 				}
 			}
 
@@ -197,10 +235,16 @@ function Import-AzureArtifactsModule
 			if ($versionNeedsToBeInstalled)
 			{
 				[string] $moduleVersionsInstalledString = $currentModuleVersionsInstalled -join ','
-				Write-Information "Current installed version of PowerShell module '$powerShellModuleName' on computer '$computerName' is '$moduleVersionsInstalledString'. Installing version '$versionToInstall'."
+				Write-Information "Current installed versions of PowerShell module '$powerShellModuleName' on computer '$computerName' are '$moduleVersionsInstalledString'. Installing version '$versionToInstall'."
 				Install-Module -Name $powerShellModuleName -RequiredVersion $versionToInstall -Repository $repositoryName -Credential $credential -Scope CurrentUser -Force -AllowClobber
 			}
 			return $versionToInstall
+		}
+
+		function Get-LatestAvailableVersion([string] $powerShellModuleName, [string] $repositoryName, [System.Management.Automation.PSCredential] $credential)
+		{
+			[string] $latestModuleVersionAvailable = (Find-Module -Name $powerShellModuleName -Repository $repositoryName -Credential $credential -ErrorAction SilentlyContinue) | Select-Object -ExpandProperty 'Version' -First 1
+			return $latestModuleVersionAvailable
 		}
 	}
 }
