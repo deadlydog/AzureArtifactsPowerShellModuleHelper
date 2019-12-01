@@ -193,12 +193,12 @@ function Import-AzureArtifactsModule
 				{
 					if ($moduleIsInstalledOnComputerAlready)
 					{
-						Write-Error "The PowerShell module '$powerShellModuleName' could not be found in the PSRepository '$repositoryName', so the latest version of the module could not be obtained. Version '$existingLatestVersion' is installed on computer '$computerName' though so it will be used."
+						Write-Error "The PowerShell module '$powerShellModuleName' could not be found in the PSRepository '$repositoryName', so the latest version of the module could not be obtained. Perhaps the credentials used are not valid. The module version '$existingLatestVersion' is installed on computer '$computerName' though so it will be used."
 						return $existingLatestVersion
 					}
 					else
 					{
-						throw "The PowerShell module '$powerShellModuleName' could not be found in the PSRepository '$repositoryName' so it cannot be downloaded and installed, and it is not already installed on computer '$computerName', so it cannot be imported."
+						throw "The PowerShell module '$powerShellModuleName' could not be found in the PSRepository '$repositoryName' so it cannot be downloaded and installed. Perhaps the credentials used are not valid. The module is not already installed on computer '$computerName', so it cannot be imported."
 					}
 				}
 
@@ -221,7 +221,7 @@ function Import-AzureArtifactsModule
 						[bool] $moduleWasNotFoundInPsRepository = [string]::IsNullOrWhitespace($latestModuleVersionAvailable)
 						if ($moduleWasNotFoundInPsRepository)
 						{
-							throw "The PowerShell module '$powerShellModuleName' could not be found in the PSRepository '$repositoryName' so it cannot be downloaded and installed, and it is not already installed on computer '$computerName', so it cannot be imported."
+							throw "The PowerShell module '$powerShellModuleName' could not be found in the PSRepository '$repositoryName' so it cannot be downloaded and installed. Perhaps the credentials used are not valid. The module is not already installed on computer '$computerName', so it cannot be imported."
 						}
 
 						Write-Error "The specified version '$versionToInstall' of PowerShell module '$powerShellModuleName' does not exist in the PSRepository '$repositoryName'. Version '$latestModuleVersionAvailable' will be installed instead."
@@ -243,7 +243,9 @@ function Import-AzureArtifactsModule
 
 		function Get-LatestAvailableVersion([string] $powerShellModuleName, [string] $repositoryName, [System.Management.Automation.PSCredential] $credential)
 		{
-			[string] $latestModuleVersionAvailable = (Find-Module -Name $powerShellModuleName -Repository $repositoryName -Credential $credential -ErrorAction SilentlyContinue) | Select-Object -ExpandProperty 'Version' -First 1
+			[string] $latestModuleVersionAvailable =
+				Find-Module -Name $powerShellModuleName -Repository $repositoryName -Credential $credential -ErrorAction SilentlyContinue |
+				Select-Object -ExpandProperty 'Version' -First 1
 			return $latestModuleVersionAvailable
 		}
 	}

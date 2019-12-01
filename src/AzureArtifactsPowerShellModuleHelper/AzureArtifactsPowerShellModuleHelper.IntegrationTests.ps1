@@ -25,11 +25,14 @@ Import-Module -Name $moduleFilePathToTest -Force
 
 function Remove-PsRepository([string] $feedUrl)
 {
-	[PSCustomObject] $psRepository = (Get-PSRepository | Where-Object { $_.SourceLocation -ieq $feedUrl })
-	if ($null -ne $psRepository)
-	{
-		Unregister-PSRepository -Name $psRepository.Name
-	}
+	Get-PSRepository | Where-Object { $_.SourceLocation -ieq $feedUrl } | Unregister-PSRepository
+	Get-PSRepository | Where-Object { $_.SourceLocation -ieq $feedUrl } | Should -BeNullOrEmpty
+}
+
+function Remove-PowerShellModule([string] $powerShellModuleName)
+{
+	Remove-Module -Name $PowerShellModuleName -Force -ErrorAction SilentlyContinue
+	Get-Module -Name $PowerShellModuleName | Should -BeNullOrEmpty
 }
 
 Describe 'Registering an Azure Artifacts PS Repository' {
@@ -109,8 +112,7 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 		# Arrange.
 		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
 		[ScriptBlock] $action = { Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName }
-		Remove-Module -Name $PowerShellModuleName -Force -ErrorAction SilentlyContinue
-		Get-Module -Name $PowerShellModuleName | Should -BeNullOrEmpty
+		Remove-PowerShellModule -powerShellModuleName $PowerShellModuleName
 
 		# Act and Assert.
 		$action | Should -Not -Throw
@@ -121,8 +123,7 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 		# Arrange.
 		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
 		[ScriptBlock] $action = { Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -Force }
-		Remove-Module -Name $PowerShellModuleName -Force -ErrorAction SilentlyContinue
-		Get-Module -Name $PowerShellModuleName | Should -BeNullOrEmpty
+		Remove-PowerShellModule -powerShellModuleName $PowerShellModuleName
 
 		# Act and Assert.
 		$action | Should -Not -Throw
@@ -133,8 +134,7 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 		# Arrange.
 		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
 		[ScriptBlock] $action = { Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -Version $ValidModuleVersionThatExists }
-		Remove-Module -Name $PowerShellModuleName -Force -ErrorAction SilentlyContinue
-		Get-Module -Name $PowerShellModuleName | Should -BeNullOrEmpty
+		Remove-PowerShellModule -powerShellModuleName $PowerShellModuleName
 
 		# Act and Assert.
 		$action | Should -Not -Throw
@@ -148,7 +148,7 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 	# 	# Arrange.
 	# 	[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
 	# 	[ScriptBlock] $action = { Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -Version $InvalidModuleVersionThatDoesNotExist }
-	# 	Remove-Module -Name $PowerShellModuleName -Force
+	# 	Remove-PowerShellModule -powerShellModuleName $PowerShellModuleName
 	# 	Uninstall-Module -Name $PowerShellModuleName -Force -AllVersions
 	# 	Write-Host "Versions: " + (Get-Module -Name $PowerShellModuleName -ListAvailable | Format-Table | Out-String)
 	# 	Get-Module -Name $PowerShellModuleName -ListAvailable | Should -BeNullOrEmpty
@@ -193,7 +193,36 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 		# Act and Assert.
 		$err.Count | Should -BeGreaterThan 0
 		[string] $errors = $err | ForEach-Object { $_.ToString() }
-		$errors | Should -Match "Version '.+?' is installed on computer '.+?' though so it will be used.*" #'though so it will be used.'
+		$errors | Should -Match "Version '.+?' is installed on computer '.+?' though so it will be used.*"
+	}
+
+	It 'Should throw an error if both a the Personal Access Token is invalid' {
+		# Arrange.
+		[System.Security.SecureString] $invalidPat = 'InvalidPat' | ConvertTo-SecureString -AsPlainText -Force
+		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -PersonalAccessToken $invalidPat
+
+		# Act.
+		Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -PersonalAccessToken $invalidPat -ErrorAction SilentlyContinue -ErrorVariable err
+
+		# Assert.
+		$err.Count | Should -BeGreaterThan 0
+		[string] $errors = $err | ForEach-Object { $_.ToString() }
+		$errors | Should -Match "Perhaps the credentials used are not valid."
+	}
+
+	It 'Should throw an error if both a the Credential is invalid' {
+		# Arrange.
+		[System.Security.SecureString] $invalidPat = 'InvalidPat' | ConvertTo-SecureString -AsPlainText -Force
+		[System.Management.Automation.PSCredential] $invalidCredential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $invalidPat
+		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -Credential $invalidCredential
+
+		# Act.
+		Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -Credential $invalidCredential -ErrorAction SilentlyContinue -ErrorVariable err
+
+		# Assert.
+		$err.Count | Should -BeGreaterThan 0
+		[string] $errors = $err | ForEach-Object { $_.ToString() }
+		$errors | Should -Match "Perhaps the credentials used are not valid."
 	}
 
 	It 'Should allow Prerelease versions to be installed' {
