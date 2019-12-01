@@ -20,6 +20,7 @@ Import-Module -Name $moduleFilePathToTest -Force
 [string] $PowerShellModuleName = 'IQ.DataCenter.ServerConfiguration'
 [string] $ValidModuleVersionThatExists = '1.0.40'
 [string] $InvalidModuleVersionThatDoesNotExist = '1.0.99999'
+[string] $ValidModulePrereleaseVersionThatExists = '1.0.66-ci20191121T214736'
 # DO NOT commit your real PAT to source control!
 [System.Security.SecureString] $SecurePersonalAccessToken = 'YourPatGoesHereButDoNotCommitItToSourceControl' | ConvertTo-SecureString -AsPlainText -Force
 [System.Management.Automation.PSCredential] $Credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $SecurePersonalAccessToken
@@ -239,7 +240,27 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 		$errors | Should -Match "Perhaps the credentials used are not valid."
 	}
 
-	It 'Should allow Prerelease versions to be installed' {
+	It 'Should not import module Prerelease versions when the Prerelease switch is not provided' {
+		# Arrange.
+		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
+		[ScriptBlock] $action = { Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -Version $ValidModulePrereleaseVersionThatExists }
+		Remove-PowerShellModule -powerShellModuleName $PowerShellModuleName
 
+		# Act and Assert.
+		$action | Should -Throw "The '-AllowPrerelease' parameter must be specified when using the Prerelease string"
+		Get-Module -Name $PowerShellModuleName | Should -BeNullOrEmpty
 	}
+
+	# Currently fails because we cannot explicitly import prerelease versions that don't conform to System.Version.
+	# 	Waiting on an answer to this before proceeding: https://github.com/MicrosoftDocs/PowerShell-Docs/issues/5177
+	# It 'Should import module Prerelease versions properly' {
+	# 	# Arrange.
+	# 	[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
+	# 	[ScriptBlock] $action = { Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -Version $ValidModulePrereleaseVersionThatExists -AllowPrerelease }
+	# 	Remove-PowerShellModule -powerShellModuleName $PowerShellModuleName
+
+	# 	# Act and Assert.
+	# 	$action | Should -Not -Throw
+	# 	Get-Module -Name $PowerShellModuleName | Should -Not -BeNullOrEmpty
+	# }
 }

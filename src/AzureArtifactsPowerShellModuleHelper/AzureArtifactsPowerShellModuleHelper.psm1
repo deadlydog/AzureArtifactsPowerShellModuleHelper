@@ -137,6 +137,9 @@ function Import-AzureArtifactsModule
 		[Parameter(Mandatory = $false, HelpMessage = 'The specific version of the PowerShell module to install (if necessary) and import. If not provided, the latest version will be used.')]
 		[string] $Version = $null,
 
+		[Parameter(Mandatory = $false, HelpMessage = 'If provided, prerelease versions are allowed to be installed and imported. This must be provided if specifying a Prerelease version in the Version parameter.')]
+		[switch] $AllowPrerelease = $false,
+
 		[Parameter(Mandatory = $true, HelpMessage = 'The name to use for the PSRepository that contains the module to import. This should be obtained from the Register-AzureArtifactsPSRepository cmdlet.')]
 		[string] $RepositoryName,
 
@@ -161,14 +164,14 @@ function Import-AzureArtifactsModule
 		}
 		else
 		{
-			$Version = Install-ModuleVersion -powerShellModuleName $Name -versionToInstall $Version -repositoryName $RepositoryName -credential $credential -force:$Force
+			$Version = Install-ModuleVersion -powerShellModuleName $Name -versionToInstall $Version -allowPrerelease:$AllowPrerelease -repositoryName $RepositoryName -credential $credential -force:$Force
 		}
 		Import-Module -Name $Name -RequiredVersion $Version -Global -Force
 	}
 
 	Begin
 	{
-		function Install-ModuleVersion([string] $powerShellModuleName, [string] $versionToInstall, [string] $repositoryName, [System.Management.Automation.PSCredential] $credential, [switch] $force)
+		function Install-ModuleVersion([string] $powerShellModuleName, [string] $versionToInstall, [switch] $allowPrerelease, [string] $repositoryName, [System.Management.Automation.PSCredential] $credential, [switch] $force)
 		{
 			[string] $computerName = $Env:ComputerName
 
@@ -189,7 +192,7 @@ function Import-AzureArtifactsModule
 			[bool] $latestVersionShouldBeInstalled = [string]::IsNullOrWhitespace($versionToInstall)
 			if ($latestVersionShouldBeInstalled)
 			{
-				[string] $latestModuleVersionAvailable = Get-LatestAvailableVersion -powerShellModuleName $powerShellModuleName -repositoryName $repositoryName -credential $credential
+				[string] $latestModuleVersionAvailable = Get-LatestAvailableVersion -powerShellModuleName $powerShellModuleName -allowPrerelease:$allowPrerelease -repositoryName $repositoryName -credential $credential
 
 				[bool] $moduleWasNotFoundInPsRepository = [string]::IsNullOrWhitespace($latestModuleVersionAvailable)
 				if ($moduleWasNotFoundInPsRepository)
@@ -209,7 +212,7 @@ function Import-AzureArtifactsModule
 			}
 			else
 			{
-				[bool] $specifiedVersionDoesNotExist = ($null -eq (Find-Module -Name $powerShellModuleName -RequiredVersion $versionToInstall -Repository $repositoryName -Credential $credential -ErrorAction SilentlyContinue))
+				[bool] $specifiedVersionDoesNotExist = ($null -eq (Find-Module -Name $powerShellModuleName -AllowPrerelease:$allowPrerelease -RequiredVersion $versionToInstall -Repository $repositoryName -Credential $credential -ErrorAction SilentlyContinue))
 				if ($specifiedVersionDoesNotExist)
 				{
 					if ($moduleIsInstalledOnComputerAlready)
@@ -219,7 +222,7 @@ function Import-AzureArtifactsModule
 					}
 					else
 					{
-						[string] $latestModuleVersionAvailable = Get-LatestAvailableVersion -powerShellModuleName $powerShellModuleName -repositoryName $repositoryName -credential $credential
+						[string] $latestModuleVersionAvailable = Get-LatestAvailableVersion -powerShellModuleName $powerShellModuleName -allowPrerelease:$allowPrerelease -repositoryName $repositoryName -credential $credential
 
 						[bool] $moduleWasNotFoundInPsRepository = [string]::IsNullOrWhitespace($latestModuleVersionAvailable)
 						if ($moduleWasNotFoundInPsRepository)
@@ -239,15 +242,15 @@ function Import-AzureArtifactsModule
 			{
 				[string] $moduleVersionsInstalledString = $currentModuleVersionsInstalled -join ','
 				Write-Information "Current installed versions of PowerShell module '$powerShellModuleName' on computer '$computerName' are '$moduleVersionsInstalledString'. Installing version '$versionToInstall'."
-				Install-Module -Name $powerShellModuleName -RequiredVersion $versionToInstall -Repository $repositoryName -Credential $credential -Scope CurrentUser -Force -AllowClobber
+				Install-Module -Name $powerShellModuleName -AllowPrerelease:$allowPrerelease -RequiredVersion $versionToInstall -Repository $repositoryName -Credential $credential -Scope CurrentUser -Force -AllowClobber
 			}
 			return $versionToInstall
 		}
 
-		function Get-LatestAvailableVersion([string] $powerShellModuleName, [string] $repositoryName, [System.Management.Automation.PSCredential] $credential)
+		function Get-LatestAvailableVersion([string] $powerShellModuleName, [switch] $allowPrerelease, [string] $repositoryName, [System.Management.Automation.PSCredential] $credential)
 		{
 			[string] $latestModuleVersionAvailable =
-				Find-Module -Name $powerShellModuleName -Repository $repositoryName -Credential $credential -ErrorAction SilentlyContinue |
+				Find-Module -Name $powerShellModuleName -AllowPrerelease:$allowPrerelease -Repository $repositoryName -Credential $credential -ErrorAction SilentlyContinue |
 				Select-Object -ExpandProperty 'Version' -First 1
 			return $latestModuleVersionAvailable
 		}
