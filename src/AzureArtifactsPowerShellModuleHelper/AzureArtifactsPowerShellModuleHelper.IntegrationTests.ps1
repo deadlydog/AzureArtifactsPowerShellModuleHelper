@@ -10,6 +10,7 @@ Set-StrictMode -Version Latest
 [string] $moduleFilePathToTest = $THIS_SCRIPTS_PATH.Replace('.IntegrationTests.ps1', '.psm1') | Resolve-Path
 Write-Verbose "Importing the module file '$moduleFilePathToTest' to run tests against it." -Verbose
 Import-Module -Name $moduleFilePathToTest -Force
+[string] $ModuleNameBeingTested = 'AzureArtifactsPowerShellModuleHelper'
 
 ###########################################################
 # You will need to update the following variables with info to pull a real package down from a real feed.
@@ -105,6 +106,19 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 		# Act and Assert.
 		$action | Should -Throw 'Parameter set cannot be resolved using the specified named parameters.'
 	}
+
+	It 'Should not throw an error when credentials are not found.' {
+		# Arrange.
+		[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
+		Remove-PsRepository -feedUrl $FeedUrl
+		Mock Get-AzureArtifactsCredential { return $null } -ModuleName $ModuleNameBeingTested
+
+		# Act.
+		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName $expectedRepositoryName
+
+		# Assert.
+		$repositoryName | Should -Be $expectedRepositoryName
+	}
 }
 
 Describe 'Importing a PowerShell module from Azure Artifacts' {
@@ -196,7 +210,7 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 		$errors | Should -Match "Version '.+?' is installed on computer '.+?' though so it will be used.*"
 	}
 
-	It 'Should throw an error if both a the Personal Access Token is invalid' {
+	It 'Should throw an error if the Personal Access Token is invalid' {
 		# Arrange.
 		[System.Security.SecureString] $invalidPat = 'InvalidPat' | ConvertTo-SecureString -AsPlainText -Force
 		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
@@ -210,7 +224,7 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 		$errors | Should -Match "Perhaps the credentials used are not valid."
 	}
 
-	It 'Should throw an error if both a the Credential is invalid' {
+	It 'Should throw an error if the Credential is invalid' {
 		# Arrange.
 		[System.Security.SecureString] $invalidPat = 'InvalidPat' | ConvertTo-SecureString -AsPlainText -Force
 		[System.Management.Automation.PSCredential] $invalidCredential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $invalidPat

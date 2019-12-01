@@ -38,11 +38,6 @@ function Register-AzureArtifactsPSRepository
 		[Parameter(Mandatory = $false, HelpMessage = 'The name to use for the PSRepository if one must be created. If not provided, one will be generated. A PSRepository with the given name will only be created if one to the Feed URL does not already exist.')]
 		[string] $RepositoryName,
 
-		# The Credential parameter seems to be unnecessary, and we may not need to use Credentials at all in this function.
-		# For now we will leave the Credential in incase I'm missing something, but we may want to make a v2 that does not take a PersonalAccessToken or Credential parameter.
-		# See this issue for more info: https://github.com/MicrosoftDocs/PowerShell-Docs/issues/5176
-		# i.e. just use: Register-PSRepository -Name $repositoryName -SourceLocation $feedUrl -InstallationPolicy Trusted > $null
-
 		[Parameter(Mandatory = $false, ParameterSetName = 'PAT', HelpMessage = 'A personal access token that has Read permissions to the Azure Artifacts feed. This must be provided as a [System.Security.SecureString]. If not provided, the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable will be checked, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables')]
 		[System.Security.SecureString] $PersonalAccessToken = $null,
 
@@ -73,17 +68,11 @@ function Register-AzureArtifactsPSRepository
 		{
 			$psRepositories = Get-PSRepository
 
-			[PSCustomObject] $existingPsRepositoryOfFeed = $psRepositories | Where-Object { $_.SourceLocation -ieq $feedUrl }
-			[bool] $psRepositoryIsAlreadyRegistered = ($null -ne $existingPsRepositoryOfFeed)
+			[PSCustomObject] $existingPsRepositoryForFeed = $psRepositories | Where-Object { $_.SourceLocation -ieq $feedUrl }
+			[bool] $psRepositoryIsAlreadyRegistered = ($null -ne $existingPsRepositoryForFeed)
 			if ($psRepositoryIsAlreadyRegistered)
 			{
-				return $existingPsRepositoryOfFeed.Name
-			}
-
-			if ($null -eq $credential)
-			{
-				[string] $computerName = $Env:ComputerName
-				throw "A personal access token was not found, so we cannot register a new PSRepository to connect to '$feedUrl' on '$computerName'."
+				return $existingPsRepositoryForFeed.Name
 			}
 
 			[PSCustomObject] $existingPsRepositoryWithSameName = $psRepositories | Where-Object { $_.Name -ieq $repositoryName }
@@ -93,7 +82,16 @@ function Register-AzureArtifactsPSRepository
 				$repositoryName += '-' + (Get-RandomCharacters -length 3)
 			}
 
-			Register-PSRepository -Name $repositoryName -SourceLocation $feedUrl -InstallationPolicy Trusted -Credential $credential > $null
+			if ($null -eq $credential)
+			{
+				[string] $computerName = $Env:ComputerName
+				Write-Warning "Credentials were not provided, so we will attempt to register a new PSRepository to connect to '$feedUrl' on '$computerName' without credentials."
+				Register-PSRepository -Name $repositoryName -SourceLocation $feedUrl -InstallationPolicy Trusted > $null
+			}
+			else
+			{
+				Register-PSRepository -Name $repositoryName -SourceLocation $feedUrl -InstallationPolicy Trusted -Credential $credential > $null
+			}
 
 			return $repositoryName
 		}
