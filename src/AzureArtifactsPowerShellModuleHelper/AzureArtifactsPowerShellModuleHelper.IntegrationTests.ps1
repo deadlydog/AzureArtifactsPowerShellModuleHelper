@@ -199,7 +199,7 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 	It 'Should throw an error if both a the Personal Access Token is invalid' {
 		# Arrange.
 		[System.Security.SecureString] $invalidPat = 'InvalidPat' | ConvertTo-SecureString -AsPlainText -Force
-		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -PersonalAccessToken $invalidPat
+		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
 
 		# Act.
 		Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -PersonalAccessToken $invalidPat -ErrorAction SilentlyContinue -ErrorVariable err
@@ -214,7 +214,7 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 		# Arrange.
 		[System.Security.SecureString] $invalidPat = 'InvalidPat' | ConvertTo-SecureString -AsPlainText -Force
 		[System.Management.Automation.PSCredential] $invalidCredential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $invalidPat
-		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -Credential $invalidCredential
+		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
 
 		# Act.
 		Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -Credential $invalidCredential -ErrorAction SilentlyContinue -ErrorVariable err
