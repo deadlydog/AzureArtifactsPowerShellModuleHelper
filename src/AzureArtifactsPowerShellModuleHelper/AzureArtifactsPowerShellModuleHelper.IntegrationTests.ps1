@@ -10,7 +10,7 @@ Set-StrictMode -Version Latest
 [string] $moduleFilePathToTest = $THIS_SCRIPTS_PATH.Replace('.IntegrationTests.ps1', '.psm1') | Resolve-Path
 Write-Verbose "Importing the module file '$moduleFilePathToTest' to run tests against it." -Verbose
 Import-Module -Name $moduleFilePathToTest -Force
-[string] $ModuleNameBeingTested = 'AzureArtifactsPowerShellModuleHelper'
+[string] $ModuleNameBeingTested = ((Split-Path -Path $moduleFilePathToTest -Leaf) -split '\.')[0] # Filename without the extension.
 
 ###########################################################
 # You will need to update the following variables with info to pull a real package down from a real feed.
