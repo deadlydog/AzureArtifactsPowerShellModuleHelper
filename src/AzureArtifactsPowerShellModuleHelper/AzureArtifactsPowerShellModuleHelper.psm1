@@ -11,8 +11,9 @@
 	The name of the PSRepository to the FeedUrl is returned.
 
 	PS C:\> [string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2 -PersonalAccessToken 'YourPatAsASecureString'
+	Attempts to create a PSRepository to the given FeedUrl if one doesn't exist, using the provided PAT.
 .INPUTS
-	FeedUrl: The URL of the Azure Artifacts PowerShell feed to register. e.g. https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2
+	FeedUrl: (Required) The URL of the Azure Artifacts PowerShell feed to register. e.g. https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2. Note: PowerShell does not yet support the "/v3" endpoint, so use v2.
 
 	RepositoryName: The name to use for the PSRepository if one must be created. If not provided, one will be generated. A PSRepository with the given name will only be created if one to the Feed URL does not already exist.
 
@@ -25,13 +26,15 @@
 .NOTES
 	You cannot provide both PersonalAccessToken (PAT) and Credential. You must provide only one, or none.
 	If neither are provided, it will attempt to retrieve a PAT from the environment variables, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables
+
+	This function writes to the error, warning, and information streams in different scenarios, as well as may throw exceptions for catastrophic errors.
 #>
 function Register-AzureArtifactsPSRepository
 {
 	[CmdletBinding(DefaultParameterSetName = 'PAT')]
 	param
 	(
-		[Parameter(Mandatory = $true, Position = 0, HelpMessage = 'The URL of the Azure Artifacts PowerShell feed to register. e.g. https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2')]
+		[Parameter(Mandatory = $true, Position = 0, HelpMessage = 'The URL of the Azure Artifacts PowerShell feed to register. e.g. https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2. Note: PowerShell does not yet support the "/v3" endpoint, so use v2.')]
 		[ValidateNotNullOrEmpty()]
 		[string] $FeedUrl,
 
@@ -125,6 +128,36 @@ function Register-AzureArtifactsPSRepository
 	}
 }
 
+<#
+.SYNOPSIS
+	Install (if necessary) and import a module from the specified repository.
+.DESCRIPTION
+	Install (if necessary) and import a module from the specified repository.
+.EXAMPLE
+	PS C:\> <example usage>
+	Explanation of what the example does
+.INPUTS
+	Name: (Required) The name of the PowerShell module to install (if necessary) and import.
+
+	Version: The specific version of the PowerShell module to install (if necessary) and import. If not provided, the latest version will be used.
+
+	AllowPrerelease: If provided, prerelease versions are allowed to be installed and imported. This must be provided if specifying a Prerelease version in the Version parameter.
+
+	RepositoryName: (Required) The name to use for the PSRepository that contains the module to import. This should be obtained from the Register-AzureArtifactsPSRepository cmdlet.
+
+	PersonalAccessToken: A personal access token that has Read permissions to the Azure Artifacts feed. This must be provided as a [System.Security.SecureString]. If not provided, the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable will be checked, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables.
+
+	Credential: The credential to use to connect to the Azure Artifacts feed.
+
+	Force: If provided, the specified PowerShell module will always be downloaded and installed, even if the version is already installed.
+.OUTPUTS
+	No outputs are returned.
+.NOTES
+	You cannot provide both PersonalAccessToken (PAT) and Credential. You must provide only one, or none.
+	If neither are provided, it will attempt to retrieve a PAT from the environment variables, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables
+
+	This function writes to the error, warning, and information streams in different scenarios, as well as may throw exceptions for catastrophic errors.
+#>
 function Import-AzureArtifactsModule
 {
 	[CmdletBinding(DefaultParameterSetName = 'PAT')]
