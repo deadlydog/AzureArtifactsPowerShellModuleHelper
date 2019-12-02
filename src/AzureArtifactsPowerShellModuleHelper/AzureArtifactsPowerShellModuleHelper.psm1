@@ -294,7 +294,7 @@ function Import-AzureArtifactsModule
 			[bool] $isPrereleaseVersion = Test-PrereleaseVersion -version $version
 			if (!$isPrereleaseVersion)
 			{
-				Import-Module -Name $powerShellModuleName -RequiredVersion $Version -Global -Force
+				Import-Module -Name $powerShellModuleName -RequiredVersion $version -Global -Force
 			}
 			else
 			{
@@ -319,19 +319,21 @@ function Import-AzureArtifactsModule
 		{
 			[string] $computerName = $Env:ComputerName
 
-			[string] $moduleDirectory = "$HOME\Documents\PowerShell\Modules\$powerShellModuleName\$Version"
-			if (!(Test-Path -Path $moduleDirectory -PathType Container))
-			{
-				$moduleDirectory = "$HOME\Documents\WindowsPowerShell\Modules\$powerShellModuleName\$Version"
-			}
+			# PowerShell is weird about the way it supports prerelease versions.
+			# The directory it installs to and the version it gives it is just the version with the prerelease postfix removed.
+			# So really Import-Module has no way of telling if a module is a stable version or a prerelease version.
+			# So we need to strip off the prerelease portion of the version number (i.e. what comes after the hyphen) to
+			# 	get the stable version number, which Import-Module will use to find it.
+			[string] $prereleaseVersionsStablePortion = ($ValidModulePrereleaseVersionThatExists -split '-')[0]
 
-			if (Test-Path -Path $moduleDirectory -PathType Container)
+			[bool] $stableVersionWasExtractedFromPrereleaseVersion = ($prereleaseVersionsStablePortion -ne $version)
+			if ($stableVersionWasExtractedFromPrereleaseVersion)
 			{
-				Import-Module -Name $moduleDirectory -Global -Force
+				Import-Module -Name $powerShellModuleName -RequiredVersion $prereleaseVersionsStablePortion -Global -Force
 			}
 			else
 			{
-				Write-Warning "The prerelease version '$version' of module '$powerShellModuleName' was requested to be imported, but after installation it could not be found on computer '$computerName'. The module will be imported without specifying the version to import."
+				Write-Warning "The prerelease version '$version' of module '$powerShellModuleName' was requested to be imported on computer '$computerName', but we could not determine where it was installed to. The module will be imported without specifying the version to import."
 				Import-Module -Name $powerShellModuleName -Global -Force
 			}
 		}

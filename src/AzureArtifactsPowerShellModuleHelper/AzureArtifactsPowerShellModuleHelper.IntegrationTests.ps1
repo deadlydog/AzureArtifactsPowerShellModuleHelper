@@ -298,10 +298,15 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 		[ScriptBlock] $action = { Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -Version $ValidModulePrereleaseVersionThatExists -AllowPrerelease }
 		Remove-PowerShellModule -powerShellModuleName $PowerShellModuleName
 
+		# PowerShell is weird about the way it supports prerelease versions.
+		# The directory it installs to and the version it gives it is just the version with the prerelease portion removed.
+		# So we need to strip off the prerelease portion of the version number. i.e. what comes after the hyphen.
+		[string] $prereleaseVersionsStablePortion = ($ValidModulePrereleaseVersionThatExists -split '-')[0]
+
 		# Act and Assert.
 		$action | Should -Not -Throw
 		$module = Get-Module -Name $PowerShellModuleName
 		$module | Should -Not -BeNullOrEmpty
-		$module.Version | Should -Be $ValidModulePrereleaseVersionThatExists
+		$module.Version | Should -Be $prereleaseVersionsStablePortion
 	}
 }
