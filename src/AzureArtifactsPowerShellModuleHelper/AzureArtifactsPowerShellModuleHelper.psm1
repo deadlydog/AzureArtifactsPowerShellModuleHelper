@@ -298,7 +298,7 @@ function Import-AzureArtifactsModule
 			}
 			else
 			{
-				Import-ModulePrereleaseVersion
+				Import-ModulePrereleaseVersion -powerShellModuleName $powerShellModuleName -version $version
 			}
 
 			Write-ModuleVersionImported -powerShellModuleName $powerShellModuleName -version $version
@@ -320,7 +320,7 @@ function Import-AzureArtifactsModule
 			[string] $computerName = $Env:ComputerName
 
 			[string] $moduleDirectory = "$HOME\Documents\PowerShell\Modules\$powerShellModuleName\$Version"
-			if (!(Test-Path -Path $module -PathType Container))
+			if (!(Test-Path -Path $moduleDirectory -PathType Container))
 			{
 				$moduleDirectory = "$HOME\Documents\WindowsPowerShell\Modules\$powerShellModuleName\$Version"
 			}
