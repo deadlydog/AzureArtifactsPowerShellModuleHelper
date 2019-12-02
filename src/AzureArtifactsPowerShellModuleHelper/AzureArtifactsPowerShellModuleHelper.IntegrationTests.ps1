@@ -34,6 +34,7 @@ function Remove-PsRepository([string] $feedUrl)
 function Remove-PowerShellModule([string] $powerShellModuleName)
 {
 	Remove-Module -Name $PowerShellModuleName -Force -ErrorAction SilentlyContinue
+	# Uninstall-Module -Name $PowerShellModuleName -Force -AllVersions -AllowPrerelease # Commented out because it causes file-in-use errors.
 	Get-Module -Name $PowerShellModuleName | Should -BeNullOrEmpty
 }
 
