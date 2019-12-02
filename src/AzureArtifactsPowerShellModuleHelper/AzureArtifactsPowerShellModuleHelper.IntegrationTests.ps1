@@ -48,6 +48,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 
 		# Assert.
 		$repositoryName | Should -Be $expectedRepositoryName
+		Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
 	}
 
 	It 'Should register a new PS repository properly when passing in a valid PAT' {
@@ -60,6 +61,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 
 		# Assert.
 		$repositoryName | Should -Be $expectedRepositoryName
+		Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
 	}
 
 	It 'Should register a new PS repository properly when passing in a valid Credential' {
@@ -72,6 +74,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 
 		# Assert.
 		$repositoryName | Should -Be $expectedRepositoryName
+		Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
 	}
 
 	It 'Should return an existing PS repository properly when no RepositoryName is specified' {
@@ -85,6 +88,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 
 		# Assert.
 		$repositoryName | Should -Be $expectedRepositoryName
+		Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
 	}
 
 	It 'Should return an existing PS repository properly when a different RepositoryName is specified' {
@@ -98,6 +102,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 
 		# Assert.
 		$repositoryName | Should -Be $expectedRepositoryName
+		Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
 	}
 
 	It 'Should throw an error if both a PersonalAccessToken and a Credential are provided' {
@@ -108,17 +113,51 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 		$action | Should -Throw 'Parameter set cannot be resolved using the specified named parameters.'
 	}
 
-	It 'Should not throw an error when credentials are not found.' {
+	It 'Should register a new PS repository properly when piping in the Feed URL' {
 		# Arrange.
 		[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
 		Remove-PsRepository -feedUrl $FeedUrl
-		Mock Get-AzureArtifactsCredential { return $null } -ModuleName $ModuleNameBeingTested
 
 		# Act.
-		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName $expectedRepositoryName
+		[string] $repositoryName = ($FeedUrl | Register-AzureArtifactsPSRepository -RepositoryName $expectedRepositoryName)
 
 		# Assert.
 		$repositoryName | Should -Be $expectedRepositoryName
+		Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
+	}
+
+	# It 'Should register a new PS repository properly when piping in the Feed URL and RepositoryName by name' {
+	# 	# Arrange.
+	# 	[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
+	# 	[hashtable] $params = @{
+	# 		FeedUrl = $FeedUrl
+	# 		RepositoryName = $expectedRepositoryName
+	# 	}
+	# 	Remove-PsRepository -feedUrl $FeedUrl
+
+	# 	# Act.
+	# 	[string] $repositoryName = ($params | Register-AzureArtifactsPSRepository)
+
+	# 	# Assert.
+	# 	$repositoryName | Should -Be $expectedRepositoryName
+	# 	Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
+	# }
+
+	Context 'When connecting to a feed without using a Credential' {
+		Mock Get-AzureArtifactsCredential { return $null } -ModuleName $ModuleNameBeingTested
+
+		It 'Should not throw an error when credentials are not found. (Assumes the FeedUrl allows you to register it without a Credential)' {
+			# Arrange.
+			[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
+			Remove-PsRepository -feedUrl $FeedUrl
+
+			# Act.
+			[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName $expectedRepositoryName
+
+			# Assert.
+			$repositoryName | Should -Be $expectedRepositoryName
+			Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
+		}
 	}
 }
 
@@ -253,14 +292,16 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 
 	# Currently fails because we cannot explicitly import prerelease versions that don't conform to System.Version.
 	# 	Waiting on an answer to this before proceeding: https://github.com/MicrosoftDocs/PowerShell-Docs/issues/5177
-	# It 'Should import module Prerelease versions properly' {
-	# 	# Arrange.
-	# 	[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
-	# 	[ScriptBlock] $action = { Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -Version $ValidModulePrereleaseVersionThatExists -AllowPrerelease }
-	# 	Remove-PowerShellModule -powerShellModuleName $PowerShellModuleName
+	It 'Should import module Prerelease versions properly' {
+		# Arrange.
+		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
+		[ScriptBlock] $action = { Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -Version $ValidModulePrereleaseVersionThatExists -AllowPrerelease }
+		Remove-PowerShellModule -powerShellModuleName $PowerShellModuleName
 
-	# 	# Act and Assert.
-	# 	$action | Should -Not -Throw
-	# 	Get-Module -Name $PowerShellModuleName | Should -Not -BeNullOrEmpty
-	# }
+		# Act and Assert.
+		$action | Should -Not -Throw
+		$module = Get-Module -Name $PowerShellModuleName
+		$module | Should -Not -BeNullOrEmpty
+		$module.Version | Should -Be $ValidModulePrereleaseVersionThatExists
+	}
 }

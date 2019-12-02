@@ -199,7 +199,8 @@ function Import-AzureArtifactsModule
 		{
 			$Version = Install-ModuleVersion -powerShellModuleName $Name -versionToInstall $Version -allowPrerelease:$AllowPrerelease -repositoryName $RepositoryName -credential $credential -force:$Force
 		}
-		Import-Module -Name $Name -RequiredVersion $Version -Global -Force
+
+		Import-ModuleVersion -powerShellModuleName $Name -version $Version
 	}
 
 	Begin
@@ -286,6 +287,71 @@ function Import-AzureArtifactsModule
 				Find-Module -Name $powerShellModuleName -AllowPrerelease:$allowPrerelease -Repository $repositoryName -Credential $credential -ErrorAction SilentlyContinue |
 				Select-Object -ExpandProperty 'Version' -First 1
 			return $latestModuleVersionAvailable
+		}
+
+		function Import-ModuleVersion([string] $powerShellModuleName, [string] $version)
+		{
+			[bool] $isPrereleaseVersion = Test-PrereleaseVersion -version $version
+			if (!$isPrereleaseVersion)
+			{
+				Import-Module -Name $powerShellModuleName -RequiredVersion $Version -Global -Force
+			}
+			else
+			{
+				Import-ModulePrereleaseVersion
+			}
+
+			Write-ModuleVersionImported -powerShellModuleName $powerShellModuleName -version $version
+		}
+
+		function Test-PrereleaseVersion([string] $version)
+		{
+			[bool] $isPrereleaseVersion = $true
+			[System.Version] $parsedVersion = $null
+			if ([System.Version]::TryParse($Version, [ref]$parsedVersion))
+			{
+				$isPrereleaseVersion = $false
+			}
+			return $isPrereleaseVersion
+		}
+
+		function Import-ModulePrereleaseVersion([string] $powerShellModuleName, [string] $version)
+		{
+			[string] $computerName = $Env:ComputerName
+
+			[string] $moduleDirectory = "$HOME\Documents\PowerShell\Modules\$powerShellModuleName\$Version"
+			if (!(Test-Path -Path $module -PathType Container))
+			{
+				$moduleDirectory = "$HOME\Documents\WindowsPowerShell\Modules\$powerShellModuleName\$Version"
+			}
+
+			if (Test-Path -Path $moduleDirectory -PathType Container)
+			{
+				Import-Module -Name $moduleDirectory -Global -Force
+			}
+			else
+			{
+				Write-Warning "The prerelease version '$version' of module '$powerShellModuleName' was requested to be imported, but after installation it could not be found on computer '$computerName'. The module will be imported without specifying the version to import."
+				Import-Module -Name $powerShellModuleName -Global -Force
+			}
+		}
+
+		function Write-ModuleVersionImported([string] $powerShellModuleName, [string] $version)
+		{
+			[string] $computerName = $Env:ComputerName
+
+			$moduleImported = Get-Module -Name $powerShellModuleName
+
+			[bool] $moduleWasImported = ($null -ne $moduleImported)
+			if ($moduleWasImported)
+			{
+				[string] $moduleVersion = $moduleImported.Version
+				Write-Information "Version '$moduleVersion' of module '$powerShellModuleName' was imported on computer '$computerName'."
+			}
+			else
+			{
+				Write-Error "The module '$powerShellModuleName' was not imported on computer '$computerName'."
+			}
 		}
 	}
 }
