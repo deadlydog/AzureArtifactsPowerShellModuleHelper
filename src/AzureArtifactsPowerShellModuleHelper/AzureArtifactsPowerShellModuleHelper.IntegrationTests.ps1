@@ -52,19 +52,6 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 		Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
 	}
 
-	It 'Should register a new PS repository properly when passing in a valid PAT' {
-		# Arrange.
-		[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
-		Remove-PsRepository -feedUrl $FeedUrl
-
-		# Act.
-		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName $expectedRepositoryName -PersonalAccessToken $SecurePersonalAccessToken
-
-		# Assert.
-		$repositoryName | Should -Be $expectedRepositoryName
-		Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
-	}
-
 	It 'Should register a new PS repository properly when passing in a valid Credential' {
 		# Arrange.
 		[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
@@ -104,14 +91,6 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 		# Assert.
 		$repositoryName | Should -Be $expectedRepositoryName
 		Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
-	}
-
-	It 'Should throw an error if both a PersonalAccessToken and a Credential are provided' {
-		# Arrange.
-		[ScriptBlock] $action = { Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -PersonalAccessToken $null -Credential $null }
-
-		# Act and Assert.
-		$action | Should -Throw 'Parameter set cannot be resolved using the specified named parameters.'
 	}
 
 	It 'Should register a new PS repository properly when piping in the Feed URL' {
@@ -249,20 +228,6 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 		$err.Count | Should -BeGreaterThan 0
 		[string] $errors = $err | ForEach-Object { $_.ToString() }
 		$errors | Should -Match "Version '.+?' is installed on computer '.+?' though so it will be used.*"
-	}
-
-	It 'Should throw an error if the Personal Access Token is invalid' {
-		# Arrange.
-		[System.Security.SecureString] $invalidPat = 'InvalidPat' | ConvertTo-SecureString -AsPlainText -Force
-		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
-
-		# Act.
-		Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -PersonalAccessToken $invalidPat -ErrorAction SilentlyContinue -ErrorVariable err
-
-		# Assert.
-		$err.Count | Should -BeGreaterThan 0
-		[string] $errors = $err | ForEach-Object { $_.ToString() }
-		$errors | Should -Match "Perhaps the credentials used are not valid."
 	}
 
 	It 'Should throw an error if the Credential is invalid' {

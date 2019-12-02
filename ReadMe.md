@@ -16,7 +16,7 @@ Optionally, you can also follow [Microsoft's documentation](https://github.com/M
 - Name: `VSS_NUGET_EXTERNAL_FEED_ENDPOINTS`
 - Value: `{"endpointCredentials": [{"endpoint":"https://pkgs.dev.azure.com/YourOganization/_packaging/YourFeed/nuget/v3/index.json", "username":"AzureDevOps", "password":"YOUR_PERSONAL_ACCESS_TOKEN"}]}`
 
-Setting up the environment variable is not a requirement, but it will allow you to avoid creating and passing in the `PersonalAccessToken` or `Credential` parameter to all of the cmdlets in this module.
+Setting up the environment variable is not a requirement, but it will allow you to avoid creating and passing in the `Credential` parameter to all of the cmdlets in this module.
 This is because by default the module will check if the `VSS_NUGET_EXTERNAL_FEED_ENDPOINTS` environment variable is present and extract your PAT from it.
 
 ### Registering your Azure Artifacts provider
@@ -38,17 +38,9 @@ You can confirm that your Azure Artifacts feed was registered by running the Pow
 
 ### Explicitly using your Personal Access Token
 
-If you do not have the environment variable set, or do not want to use it, all of the cmdlets allow you to provide a secure `PersonalAccessToken` or `Credential` parameter.
+If you do not have the environment variable set, or do not want to use it, all of the cmdlets allow you to provide a `Credential` parameter.
 
-You can provide a secure Personal Access Token like this:
-
-```powershell
-[System.Security.SecureString] $securePersonalAccessToken = 'YourPatGoesHere' | ConvertTo-SecureString -AsPlainText -Force
-[string] $feedUrl = 'https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2'
-[string] $repositoryName = Register-AzureArtifactsPSRepository -PersonalAccessToken $securePersonalAccessToken -FeedUrl $feedUrl
-```
-
-Or a Credential object like this:
+You can provide a Credential object like this:
 
 ```powershell
 [System.Security.SecureString] $securePersonalAccessToken = 'YourPatGoesHere' | ConvertTo-SecureString -AsPlainText -Force
@@ -57,8 +49,7 @@ Or a Credential object like this:
 [string] $repositoryName = Register-AzureArtifactsPSRepository -Credential $credential -FeedUrl $feedUrl
 ```
 
-You can only provide `-PersonalAccessToken` _or_ `-Credential`, not both.
-Also, if one is provided it will be used over any value stored in the `VSS_NUGET_EXTERNAL_FEED_ENDPOINTS` environment variable.
+If a Credential is provided, it will be used over any value stored in the `VSS_NUGET_EXTERNAL_FEED_ENDPOINTS` environment variable.
 
 __NOTE:__ You should avoid committing your Personal Access Token to source control and instead retrieve it from a secure repository, like Azure KeyVault.
 
