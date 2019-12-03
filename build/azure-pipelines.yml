@@ -23,7 +23,7 @@ variables:
 
 steps:
 - task: PowerShell@2
-  displayName: Set the prerelease version number
+  displayName: Set the prereleaseVersionNumber variable value
   inputs:
     targetType: 'inline'
     script: |
