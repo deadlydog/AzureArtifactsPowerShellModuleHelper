@@ -14,10 +14,10 @@ name: '1.0.$(Rev:r)'
 
 variables:
   versionNumber: '$(Build.BuildNumber)'
-  prereleaseVersionNumber: $(versionNumber)-ci$(Date:yyyyMMddTHHmmss)
+  prereleaseVersionNumber: '$(versionNumber)-ci$(Date:yyyyMMddTHHmmss)'
   moduleName: AzureArtifactsPowerShellModuleHelper
-  moduleDirectoryPath: $(System.DefaultWorkingDirectory)\src\$(moduleName)
-  publishDirectoryPath: $(Build.ArtifactStagingDirectory)\Modules
+  moduleDirectoryPath: '$(System.DefaultWorkingDirectory)\src\$(moduleName)'
+  publishDirectoryPath: '$(Build.ArtifactStagingDirectory)\Modules'
   azureArtifactsFeedUrlForIntegrationTests: 'https://pkgs.dev.azure.com/iqmetrix/_packaging/iqmetrix/nuget/v2'
   VSS_NUGET_EXTERNAL_FEED_ENDPOINTS: '{"endpointCredentials": [{"endpoint":"$(azureArtifactsFeedUrlForIntegrationTests)", "username":"AzureDevOps", "password":"$(AzureArtifactsPersonalAccessToken)"}]}'
 
