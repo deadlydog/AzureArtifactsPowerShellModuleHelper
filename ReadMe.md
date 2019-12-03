@@ -49,7 +49,7 @@ You can provide a Credential object like this:
 [string] $repositoryName = Register-AzureArtifactsPSRepository -Credential $credential -FeedUrl $feedUrl
 ```
 
-If a Credential is provided, it will be used over any value stored in the `VSS_NUGET_EXTERNAL_FEED_ENDPOINTS` environment variable.
+If a Credential is provided, it will be used instead of any value stored in the `VSS_NUGET_EXTERNAL_FEED_ENDPOINTS` environment variable.
 
 __NOTE:__ You should avoid committing your Personal Access Token to source control and instead retrieve it from a secure repository, like Azure KeyVault.
 
@@ -58,13 +58,12 @@ __NOTE:__ You should avoid committing your Personal Access Token to source contr
 Now that you have your Azure Artifacts feed registered, you can import it by using the `Import-AzureArtifactsModule` module:
 
 ```powershell
-[string] $moduleName = 'ModuleNameInYourFeed'
-Import-AzureArtifactsModule -Name $moduleName -RepositoryName $repositoryName
+Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -RepositoryName $repositoryName
 ```
 
 The `$repositoryName` is the value that was returned from the `Register-AzureArtifactsPSRepository` cmdlet above.
 
-The module will first be installed to the CurrentUser scope if necessary, and then imported.
+The module will be installed in the `CurrentUser` scope if necessary, and then imported.
 
 #### Importing a specific version
 
