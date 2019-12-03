@@ -1,0 +1,60 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  versionNumber: '1.0.0'
+  prereleaseVersionNumber: $(versionNumber)-ci$(Date:yyyyMMddTHHmmss)
+  moduleName: AzureArtifactsPowerShellModuleHelper
+  moduleDirectoryPath: $(System.DefaultWorkingDirectory)\src\$(moduleName)
+  publishDirectoryPath: $(Build.ArtifactStagingDirectory)\Modules
+
+steps:
+- task: Pester@8
+  displayName: Run Pester PowerShell tests
+  inputs:
+    scriptFolder: '$(System.DefaultWorkingDirectory)\*'
+    resultsFile: '$(System.DefaultWorkingDirectory)\Test-Pester.XML'
+    run32Bit: False
+
+- task: VersionPowerShellModule@2
+  displayName: Version the PowerShell module manifests with the stable version number
+  inputs:
+    Path: '$(Build.SourcesDirectory)'
+    VersionNumber: '$(versionNumber)'
+    InjectVersion: true
+
+- task: CopyFiles@2
+  displayName: Copy the stable module files to the publish location
+  inputs:
+    SourceFolder: '$(moduleDirectoryPath)'
+    Contents: '**'
+    TargetFolder: '$(publishDirectoryPath)\Stable\$(moduleName)'
+
+- task: VersionPowerShellModule@2
+  displayName: Version the PowerShell module manifests with the prerelease version number
+  inputs:
+    Path: '$(Build.SourcesDirectory)'
+    VersionNumber: '$(prereleaseVersionNumber)'
+    InjectVersion: true
+
+- task: CopyFiles@2
+  displayName: Copy the prerelease module files to the publish location
+  inputs:
+    SourceFolder: '$(moduleDirectoryPath)'
+    Contents: '**'
+    TargetFolder: '$(publishDirectoryPath)\Prerelease\$(moduleName)'
+
+- task: PublishBuildArtifacts@1
+  displayName: Publish build artifacts
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
