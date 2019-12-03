@@ -14,7 +14,7 @@ name: '1.0.$(Rev:r)'
 
 variables:
   versionNumber: '$(Build.BuildNumber)'
-  prereleaseVersionNumber: ${{ format('{0:yyyyMMddTHHmmss}', pipeline.startTime) }}
+  prereleaseVersionNumber: 'Set dynamically below in a task'
   moduleName: AzureArtifactsPowerShellModuleHelper
   moduleDirectoryPath: '$(System.DefaultWorkingDirectory)\src\$(moduleName)'
   publishDirectoryPath: '$(Build.ArtifactStagingDirectory)\Modules'
@@ -22,6 +22,14 @@ variables:
   VSS_NUGET_EXTERNAL_FEED_ENDPOINTS: '{"endpointCredentials": [{"endpoint":"$(azureArtifactsFeedUrlForIntegrationTests)", "username":"AzureDevOps", "password":"$(AzureArtifactsPersonalAccessToken)"}]}'
 
 steps:
+- task: PowerShell@2
+  displayName: Set the prerelease version number
+  inputs:
+    targetType: 'inline'
+    script: |
+      [string] $dateTime = (Get-Date -Format 'yyyyMMddTHHmmss')
+      Write-Host "##vso[task.setvariable variable=prereleaseVersionNumber]$(versionNumber)-ci$dateTime"
+
 # - task: Pester@8
 #   displayName: Run Pester PowerShell integration tests
 #   inputs:
