@@ -23,7 +23,7 @@ steps:
 - task: Pester@8
   displayName: Run Pester PowerShell tests
   inputs:
-    scriptFolder: @{ Path = '$(System.DefaultWorkingDirectory)\src\AzureArtifactsPowerShellModuleHelper\AzureArtifactsPowerShellModuleHelper.IntegrationTests.ps1'; Parameters = @{ AzureArtifactsPersonalAccessToken = '$(AzureArtifactsPersonalAccessToken)' }}
+    scriptFolder: '@{ Path = ''$(System.DefaultWorkingDirectory)\src\AzureArtifactsPowerShellModuleHelper\AzureArtifactsPowerShellModuleHelper.IntegrationTests.ps1''; Parameters = @{ AzureArtifactsPersonalAccessToken = ''$(AzureArtifactsPersonalAccessToken)'' }}'
     resultsFile: '$(System.DefaultWorkingDirectory)\Test-Pester.XML'
     run32Bit: False
 
