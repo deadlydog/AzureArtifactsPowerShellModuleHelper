@@ -5,6 +5,12 @@
 #	- You need to have a real Personal Access Token, both in the variables below and in your environmental variables: https://github.com/Microsoft/artifacts-credprovider#environment-variables
 # Ideally we would mock out any external/infrastructure dependencies; I just haven't had time to yet so for now hit the real dependencies.
 
+param
+(
+	[Parameter(Mandatory = $false, HelpMessage = 'The Personal Access Token to use to connect to the Azure Artifacts feed.')]
+	[string] $AzureArtifactsPersonalAccessToken = 'YourPatGoesHereButDoNotCommitItToSourceControl'
+)
+
 Set-StrictMode -Version Latest
 [string] $THIS_SCRIPTS_PATH = $PSCommandPath
 [string] $moduleFilePathToTest = $THIS_SCRIPTS_PATH.Replace('.IntegrationTests.ps1', '.psm1') | Resolve-Path
@@ -21,9 +27,7 @@ Import-Module -Name $moduleFilePathToTest -Force
 [string] $ValidModuleVersionThatExists = '1.0.40'
 [string] $InvalidModuleVersionThatDoesNotExist = '1.0.99999'
 [string] $ValidModulePrereleaseVersionThatExists = '1.0.66-ci20191121T214736'
-# DO NOT commit your real PAT to source control!
-[System.Security.SecureString] $SecurePersonalAccessToken = 'YourPatGoesHereButDoNotCommitItToSourceControl' | ConvertTo-SecureString -AsPlainText -Force
-[System.Management.Automation.PSCredential] $Credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $SecurePersonalAccessToken
+[System.Management.Automation.PSCredential] $Credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', ($AzureArtifactsPersonalAccessToken | ConvertTo-SecureString -AsPlainText -Force)
 
 function Remove-PsRepository([string] $feedUrl)
 {
