@@ -128,7 +128,7 @@ function Register-AzureArtifactsPSRepository
 			if ($nuGetPackageProviderIsNotInstalled)
 			{
 				[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
-				Write-Information 'Installing NuGet package provider for user '$currentUser'.'
+				Write-Information 'Installing NuGet package provider for user '$currentUser' to scope '$scope'.'
 				Install-PackageProvider NuGet -Scope $scope -Force > $null
 			}
 		}
@@ -285,7 +285,7 @@ function Import-AzureArtifactsModule
 			{
 				[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 				[string] $moduleVersionsInstalledString = $currentModuleVersionsInstalled -join ','
-				Write-Information "Current installed versions of PowerShell module '$powerShellModuleName' on computer '$computerName' are '$moduleVersionsInstalledString'. Installing version '$versionToInstall' for user '$currentUser'."
+				Write-Information "Current installed versions of PowerShell module '$powerShellModuleName' on computer '$computerName' are '$moduleVersionsInstalledString'. Installing version '$versionToInstall' for user '$currentUser' to scope '$scope'."
 				try
 				{
 					Install-Module -Name $powerShellModuleName -AllowPrerelease:$allowPrerelease -RequiredVersion $versionToInstall -Repository $repositoryName -Credential $credential -Scope $scope -Force -AllowClobber
