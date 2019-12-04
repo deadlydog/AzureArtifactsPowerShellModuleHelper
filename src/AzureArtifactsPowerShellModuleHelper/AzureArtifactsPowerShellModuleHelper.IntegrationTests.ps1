@@ -2,7 +2,6 @@
 # This means that these tests will actually reach out to the specified $FeedUrl and connect/authenticate against it.
 # In order for these tests to run successfully:
 #	- You need to use a real Azure Artifacts $FeedUrl and a real module to import from it.
-#	- You need to have a real Personal Access Token, both in the variables below and in your environmental variables: https://github.com/Microsoft/artifacts-credprovider#environment-variables
 # Ideally we would mock out any external/infrastructure dependencies; I just haven't had time to yet so for now hit the real dependencies.
 
 param
@@ -27,7 +26,8 @@ Import-Module -Name $moduleFilePathToTest -Force
 [string] $ValidModuleVersionThatExists = '1.0.40'
 [string] $InvalidModuleVersionThatDoesNotExist = '1.0.99999'
 [string] $ValidModulePrereleaseVersionThatExists = '1.0.66-ci20191121T214736'
-[System.Management.Automation.PSCredential] $Credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', ($AzureArtifactsPersonalAccessToken | ConvertTo-SecureString -AsPlainText -Force)
+[System.Security.SecureString] $SecurePersonalAccessToken = ($AzureArtifactsPersonalAccessToken | ConvertTo-SecureString -AsPlainText -Force)
+[System.Management.Automation.PSCredential] $Credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $SecurePersonalAccessToken
 
 function Remove-PsRepository([string] $feedUrl)
 {
@@ -43,17 +43,79 @@ function Remove-PowerShellModule([string] $powerShellModuleName)
 }
 
 Describe 'Registering an Azure Artifacts PS Repository' {
-	It 'Should register a new PS repository properly when relying in PAT from environmental variable' {
-		# Arrange.
-		[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
-		Remove-PsRepository -feedUrl $FeedUrl
+	Context 'When relying on retrieving the Azure Artifacts PAT from the environment variable'{
+		Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
 
-		# Act.
-		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName $expectedRepositoryName
+		It 'Should register a new PS repository properly when relying in PAT from environmental variable' {
+			# Arrange.
+			[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
+			Remove-PsRepository -feedUrl $FeedUrl
 
-		# Assert.
-		$repositoryName | Should -Be $expectedRepositoryName
-		Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
+			# Act.
+			[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName $expectedRepositoryName
+
+			# Assert.
+			$repositoryName | Should -Be $expectedRepositoryName
+			Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
+		}
+
+		It 'Should return an existing PS repository properly when no RepositoryName is specified' {
+			# Arrange.
+			[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
+			Remove-PsRepository -feedUrl $FeedUrl
+			Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName $expectedRepositoryName
+
+			# Act.
+			[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
+
+			# Assert.
+			$repositoryName | Should -Be $expectedRepositoryName
+			Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
+		}
+
+		It 'Should return an existing PS repository properly when a different RepositoryName is specified' {
+			# Arrange.
+			[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
+			Remove-PsRepository -feedUrl $FeedUrl
+			Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName $expectedRepositoryName
+
+			# Act.
+			[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName 'NameThatShouldNotEndUpInThePSRepositories'
+
+			# Assert.
+			$repositoryName | Should -Be $expectedRepositoryName
+			Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
+		}
+
+		It 'Should register a new PS repository properly when piping in the Feed URL' {
+			# Arrange.
+			[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
+			Remove-PsRepository -feedUrl $FeedUrl
+
+			# Act.
+			[string] $repositoryName = ($FeedUrl | Register-AzureArtifactsPSRepository -RepositoryName $expectedRepositoryName)
+
+			# Assert.
+			$repositoryName | Should -Be $expectedRepositoryName
+			Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
+		}
+
+		# It 'Should register a new PS repository properly when piping in the Feed URL and RepositoryName by name' {
+		# 	# Arrange.
+		# 	[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
+		# 	[hashtable] $params = @{
+		# 		FeedUrl = $FeedUrl
+		# 		RepositoryName = $expectedRepositoryName
+		# 	}
+		# 	Remove-PsRepository -feedUrl $FeedUrl
+
+		# 	# Act.
+		# 	[string] $repositoryName = ($params | Register-AzureArtifactsPSRepository)
+
+		# 	# Assert.
+		# 	$repositoryName | Should -Be $expectedRepositoryName
+		# 	Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
+		# }
 	}
 
 	It 'Should register a new PS repository properly when passing in a valid Credential' {
@@ -68,64 +130,6 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 		$repositoryName | Should -Be $expectedRepositoryName
 		Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
 	}
-
-	It 'Should return an existing PS repository properly when no RepositoryName is specified' {
-		# Arrange.
-		[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
-		Remove-PsRepository -feedUrl $FeedUrl
-		Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName $expectedRepositoryName
-
-		# Act.
-		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
-
-		# Assert.
-		$repositoryName | Should -Be $expectedRepositoryName
-		Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
-	}
-
-	It 'Should return an existing PS repository properly when a different RepositoryName is specified' {
-		# Arrange.
-		[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
-		Remove-PsRepository -feedUrl $FeedUrl
-		Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName $expectedRepositoryName
-
-		# Act.
-		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -RepositoryName 'NameThatShouldNotEndUpInThePSRepositories'
-
-		# Assert.
-		$repositoryName | Should -Be $expectedRepositoryName
-		Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
-	}
-
-	It 'Should register a new PS repository properly when piping in the Feed URL' {
-		# Arrange.
-		[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
-		Remove-PsRepository -feedUrl $FeedUrl
-
-		# Act.
-		[string] $repositoryName = ($FeedUrl | Register-AzureArtifactsPSRepository -RepositoryName $expectedRepositoryName)
-
-		# Assert.
-		$repositoryName | Should -Be $expectedRepositoryName
-		Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
-	}
-
-	# It 'Should register a new PS repository properly when piping in the Feed URL and RepositoryName by name' {
-	# 	# Arrange.
-	# 	[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
-	# 	[hashtable] $params = @{
-	# 		FeedUrl = $FeedUrl
-	# 		RepositoryName = $expectedRepositoryName
-	# 	}
-	# 	Remove-PsRepository -feedUrl $FeedUrl
-
-	# 	# Act.
-	# 	[string] $repositoryName = ($params | Register-AzureArtifactsPSRepository)
-
-	# 	# Assert.
-	# 	$repositoryName | Should -Be $expectedRepositoryName
-	# 	Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
-	# }
 
 	Context 'When connecting to a feed without using a Credential' {
 		Mock Get-AzureArtifactsCredential { return $null } -ModuleName $ModuleNameBeingTested

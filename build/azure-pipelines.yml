@@ -19,7 +19,6 @@ variables:
   moduleDirectoryPath: '$(System.DefaultWorkingDirectory)\src\$(moduleName)'
   publishDirectoryPath: '$(Build.ArtifactStagingDirectory)\Modules'
   azureArtifactsFeedUrlForIntegrationTests: 'https://pkgs.dev.azure.com/iqmetrix/_packaging/iqmetrix/nuget/v2'
-  azureArtifactsPatEnvironmentalVariableValue: '{"endpointCredentials": [{"endpoint":"$(azureArtifactsFeedUrlForIntegrationTests)", "username":"AzureDevOps", "password":"$(AzureArtifactsPersonalAccessToken)"}]}'
 
 steps:
 - task: PowerShell@2
@@ -29,12 +28,6 @@ steps:
     script: |
       [string] $dateTime = (Get-Date -Format 'yyyyMMddTHHmmss')
       Write-Host "##vso[task.setvariable variable=prereleaseVersionNumber]$(versionNumber)-ci$dateTime"
-
-# - task: PowerShell@2
-#   displayName: Set Azure Artifacts Personal Access Token in the environmental variable at the machine scope
-#   inputs:
-#     targetType: 'inline'
-#     script: '[System.Environment]::SetEnvironmentVariable(''VSS_NUGET_EXTERNAL_FEED_ENDPOINTS'', ''$(azureArtifactsPatEnvironmentalVariableValue)'', [System.EnvironmentVariableTarget]::Machine)'
 
 # - task: Pester@8
 #   displayName: Run Pester PowerShell integration tests
