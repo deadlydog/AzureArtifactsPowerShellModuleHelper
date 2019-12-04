@@ -5,9 +5,8 @@
 	Registers a PSRepository to the given Azure Artifacts feed if one does not already exist.
 .EXAMPLE
 	```
-	PS C:\> [string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2 -RepositoryName 'MyAzureArtifacts'
+	[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2 -RepositoryName 'MyAzureArtifacts'
 	```
-
 	Attempts to create a PSRepository to the given FeedUrl if one doesn't exist.
 	If one does not exist, one will be created with the name `MyAzureArtifacts`.
 	Since no Credential was provided, it will attempt to retrieve a PAT from the environmental variables.
@@ -19,7 +18,6 @@
 	[string] $feedUrl = 'https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2'
 	[string] $repositoryName = Register-AzureArtifactsPSRepository -Credential $credential -FeedUrl $feedUrl
 	```
-
 	Attempts to create a PSRepository to the given FeedUrl if one doesn't exist, using the Credential provided.
 .INPUTS
 	FeedUrl: (Required) The URL of the Azure Artifacts PowerShell feed to register. e.g. https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2. Note: PowerShell does not yet support the "/v3" endpoint, so use v2.
@@ -27,6 +25,8 @@
 	RepositoryName: The name to use for the PSRepository if one must be created. If not provided, one will be generated. A PSRepository with the given name will only be created if one to the Feed URL does not already exist.
 
 	Credential: The credential to use to connect to the Azure Artifacts feed. This should be created from a personal access token that has at least Read permissions to the Azure Artifacts feed. If not provided, the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable will be checked, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables.
+
+	Scope: If the NuGet Package Provider needs to be installed, this is the scope it will be installed in. Allowed values are "AllUsers" and "CurrentUser". Default is "CurrentUser".
 .OUTPUTS
 	System.String
 	Returns the Name of the PSRepository that can be used to connect to the given Feed URL.
@@ -47,7 +47,11 @@ function Register-AzureArtifactsPSRepository
 		[string] $RepositoryName,
 
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, HelpMessage = 'The credential to use to connect to the Azure Artifacts feed. This should be created from a personal access token that has at least Read permissions to the Azure Artifacts feed. If not provided, the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable will be checked, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables')]
-		[System.Management.Automation.PSCredential] $Credential = $null
+		[System.Management.Automation.PSCredential] $Credential = $null,
+
+		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, HelpMessage = 'If the NuGet Package Provider needs to be installed, this is the scope it will be installed in. Allowed values are "AllUsers" and "CurrentUser". Default is "CurrentUser".')]
+		[ValidateSet('AllUsers', 'CurrentUser')]
+		[string] $Scope = 'CurrentUser'
 	)
 
 	Process
@@ -60,7 +64,7 @@ function Register-AzureArtifactsPSRepository
 
 		$Credential = Get-AzureArtifactsCredential -credential $Credential
 
-		Install-NuGetPackageProvider
+		Install-NuGetPackageProvider -scope $Scope
 
 		[string] $repositoryNameOfFeed = Register-AzureArtifactsPowerShellRepository -feedUrl $FeedUrl -repositoryName $RepositoryName -credential $Credential
 
@@ -118,14 +122,14 @@ function Register-AzureArtifactsPSRepository
 			return [string]::Empty
 		}
 
-		function Install-NuGetPackageProvider
+		function Install-NuGetPackageProvider([string] $scope)
 		{
 			[bool] $nuGetPackageProviderIsNotInstalled = ($null -eq (Get-PackageProvider | Where-Object { $_.Name -ieq 'NuGet' }))
 			if ($nuGetPackageProviderIsNotInstalled)
 			{
 				[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 				Write-Information 'Installing NuGet package provider for user '$currentUser'.'
-				Install-PackageProvider NuGet -Scope CurrentUser -Force > $null
+				Install-PackageProvider NuGet -Scope $scope -Force > $null
 			}
 		}
 	}
@@ -137,8 +141,10 @@ function Register-AzureArtifactsPSRepository
 .DESCRIPTION
 	Install (if necessary) and import a module from the specified repository.
 .EXAMPLE
-	PS C:\> <example usage>
-	Explanation of what the example does
+	```
+	Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -RepositoryName $repositoryName
+	```
+	Installs the 'ModuleNameInYourFeed' module from the specified Repository if necessary, and then imports it.
 .INPUTS
 	Name: (Required) The name of the PowerShell module to install (if necessary) and import.
 
@@ -151,6 +157,8 @@ function Register-AzureArtifactsPSRepository
 	Credential: The credential to use to connect to the Azure Artifacts feed.
 
 	Force: If provided, the specified PowerShell module will always be downloaded and installed, even if the version is already installed.
+
+	Scope: If the PowerShell Module needs to be installed, this is the scope it will be installed in. Allowed values are "AllUsers" and "CurrentUser". Default is "CurrentUser".
 .OUTPUTS
 	No outputs are returned.
 .NOTES
@@ -180,7 +188,11 @@ function Import-AzureArtifactsModule
 		[System.Management.Automation.PSCredential] $Credential = $null,
 
 		[Parameter(Mandatory = $false, HelpMessage = 'If provided, the specified PowerShell module will always be downloaded and installed, even if the version is already installed.')]
-		[switch] $Force = $false
+		[switch] $Force = $false,
+
+		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, HelpMessage = 'If the PowerShell Module needs to be installed, this is the scope it will be installed in. Allowed values are "AllUsers" and "CurrentUser". Default is "CurrentUser".')]
+		[ValidateSet('AllUsers', 'CurrentUser')]
+		[string] $Scope = 'CurrentUser'
 	)
 
 	Process
@@ -194,7 +206,7 @@ function Import-AzureArtifactsModule
 		}
 		else
 		{
-			$Version = Install-ModuleVersion -powerShellModuleName $Name -versionToInstall $Version -allowPrerelease:$AllowPrerelease -repositoryName $RepositoryName -credential $credential -force:$Force
+			$Version = Install-ModuleVersion -powerShellModuleName $Name -versionToInstall $Version -allowPrerelease:$AllowPrerelease -repositoryName $RepositoryName -credential $credential -force:$Force -scope $Scope
 		}
 
 		Import-ModuleVersion -powerShellModuleName $Name -version $Version
@@ -202,7 +214,7 @@ function Import-AzureArtifactsModule
 
 	Begin
 	{
-		function Install-ModuleVersion([string] $powerShellModuleName, [string] $versionToInstall, [switch] $allowPrerelease, [string] $repositoryName, [System.Management.Automation.PSCredential] $credential, [switch] $force)
+		function Install-ModuleVersion([string] $powerShellModuleName, [string] $versionToInstall, [switch] $allowPrerelease, [string] $repositoryName, [System.Management.Automation.PSCredential] $credential, [switch] $force, [string] $scope)
 		{
 			[string] $computerName = $Env:ComputerName
 
@@ -274,7 +286,7 @@ function Import-AzureArtifactsModule
 				[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 				[string] $moduleVersionsInstalledString = $currentModuleVersionsInstalled -join ','
 				Write-Information "Current installed versions of PowerShell module '$powerShellModuleName' on computer '$computerName' are '$moduleVersionsInstalledString'. Installing version '$versionToInstall' for user '$currentUser'."
-				Install-Module -Name $powerShellModuleName -AllowPrerelease:$allowPrerelease -RequiredVersion $versionToInstall -Repository $repositoryName -Credential $credential -Scope CurrentUser -Force -AllowClobber
+				Install-Module -Name $powerShellModuleName -AllowPrerelease:$allowPrerelease -RequiredVersion $versionToInstall -Repository $repositoryName -Credential $credential -Scope $scope -Force -AllowClobber
 			}
 			return $versionToInstall
 		}
