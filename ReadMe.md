@@ -36,6 +36,12 @@ Save this in a variable, as you will need to use this when interacting with othe
 
 You can confirm that your Azure Artifacts feed was registered by running the PowerShell command `Get-PSRepository`, and can remove it if needed using the command `Unregister-PSRepository -Name $repositoryName`.
 
+To get more details on what happens during this process, you can use the Information stream:
+
+```powershell
+[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $feedUrl -InformationAction Continue
+```
+
 ### Explicitly using your Personal Access Token
 
 If you do not have the environment variable set, or do not want to use it, all of the cmdlets allow you to provide a `Credential` parameter.
@@ -63,7 +69,13 @@ Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -RepositoryName $reposi
 
 The `$repositoryName` is the value that was returned from the `Register-AzureArtifactsPSRepository` cmdlet above.
 
-The module will be installed in the `CurrentUser` scope if necessary, and then imported.
+The module will be installed if necessary, and then imported.
+
+To get more details on what version was installed and imported, you can use the Information stream:
+
+```powershell
+Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -RepositoryName $repositoryName -InformationAction Continue
+```
 
 #### Importing a specific version
 
