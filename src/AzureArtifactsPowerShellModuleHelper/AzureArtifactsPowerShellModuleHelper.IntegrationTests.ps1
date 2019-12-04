@@ -172,7 +172,7 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 		Get-Module -Name $PowerShellModuleName | Should -Not -BeNullOrEmpty
 	}
 
-	It 'Should import the specified version properly' {
+	It 'Should import the module properly when a specific version is requested' {
 		# Arrange.
 		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
 		[ScriptBlock] $action = { Import-AzureArtifactsModule -Name $PowerShellModuleName -RepositoryName $repositoryName -Version $ValidModuleVersionThatExists }
@@ -264,8 +264,6 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 		Get-Module -Name $PowerShellModuleName | Should -BeNullOrEmpty
 	}
 
-	# Currently fails because we cannot explicitly import prerelease versions that don't conform to System.Version.
-	# 	Waiting on an answer to this before proceeding: https://github.com/MicrosoftDocs/PowerShell-Docs/issues/5177
 	It 'Should import module Prerelease versions properly' {
 		# Arrange.
 		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl

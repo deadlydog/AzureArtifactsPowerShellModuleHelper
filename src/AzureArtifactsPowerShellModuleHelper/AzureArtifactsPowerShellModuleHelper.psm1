@@ -286,7 +286,28 @@ function Import-AzureArtifactsModule
 				[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 				[string] $moduleVersionsInstalledString = $currentModuleVersionsInstalled -join ','
 				Write-Information "Current installed versions of PowerShell module '$powerShellModuleName' on computer '$computerName' are '$moduleVersionsInstalledString'. Installing version '$versionToInstall' for user '$currentUser'."
-				Install-Module -Name $powerShellModuleName -AllowPrerelease:$allowPrerelease -RequiredVersion $versionToInstall -Repository $repositoryName -Credential $credential -Scope $scope -Force -AllowClobber
+				try
+				{
+					Install-Module -Name $powerShellModuleName -AllowPrerelease:$allowPrerelease -RequiredVersion $versionToInstall -Repository $repositoryName -Credential $credential -Scope $scope -Force -AllowClobber
+				}
+				catch
+				{
+					[string] $exceptionMessage = $_.Exception.ToString()
+					[string] $errorMessage = "The following exception was thrown while trying to install PowerShell module '$powerShellModuleName' version '$versionToInstall' for user '$currentUser' to scope '$scope'."
+
+					if ($moduleIsInstalledOnComputerAlready)
+					{
+						$errorMessage += "Version '$existingLatestVersion' will be used instead." +
+							[System.Environment]::NewLine + $exceptionMessage
+						Write-Error $errorMessage
+						return $existingLatestVersion
+					}
+					else
+					{
+						$errorMessage += 'No other version of the PowerShell module is installed, so it cannot be imported.'
+						throw ($errorMessage + [System.Environment]::NewLine + $exceptionMessage)
+					}
+				}
 			}
 			return $versionToInstall
 		}
@@ -351,6 +372,7 @@ function Import-AzureArtifactsModule
 		function Write-ModuleVersionImported([string] $powerShellModuleName, [string] $version)
 		{
 			[string] $computerName = $Env:ComputerName
+			[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 
 			$moduleImported = Get-Module -Name $powerShellModuleName
 
@@ -358,11 +380,11 @@ function Import-AzureArtifactsModule
 			if ($moduleWasImported)
 			{
 				[string] $moduleVersion = $moduleImported.Version
-				Write-Information "Version '$moduleVersion' of module '$powerShellModuleName' was imported on computer '$computerName'."
+				Write-Information "Version '$moduleVersion' of module '$powerShellModuleName' was imported on computer '$computerName' for user '$currentUser'."
 			}
 			else
 			{
-				Write-Error "The module '$powerShellModuleName' was not imported on computer '$computerName'."
+				Write-Error "The module '$powerShellModuleName' was not imported on computer '$computerName' for user '$currentUser'."
 			}
 		}
 	}
