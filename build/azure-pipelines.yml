@@ -29,12 +29,12 @@ steps:
       [string] $dateTime = (Get-Date -Format 'yyyyMMddTHHmmss')
       Write-Host "##vso[task.setvariable variable=prereleaseVersionNumber]$(versionNumber)-ci$dateTime"
 
-- task: Pester@8
-  displayName: Run Pester PowerShell integration tests
-  inputs:
-    scriptFolder: '@{ Path = ''$(System.DefaultWorkingDirectory)\src\AzureArtifactsPowerShellModuleHelper\AzureArtifactsPowerShellModuleHelper.IntegrationTests.ps1''; Parameters = @{ AzureArtifactsPersonalAccessToken = ''$(AzureArtifactsPersonalAccessToken)'' }}'
-    resultsFile: '$(System.DefaultWorkingDirectory)\Test-Pester.XML'
-    run32Bit: False
+# - task: Pester@8
+#   displayName: Run Pester PowerShell integration tests
+#   inputs:
+#     scriptFolder: '@{ Path = ''$(System.DefaultWorkingDirectory)\src\AzureArtifactsPowerShellModuleHelper\AzureArtifactsPowerShellModuleHelper.IntegrationTests.ps1''; Parameters = @{ AzureArtifactsPersonalAccessToken = ''$(AzureArtifactsPersonalAccessToken)'' }}'
+#     resultsFile: '$(System.DefaultWorkingDirectory)\Test-Pester.XML'
+#     run32Bit: False
 
 - task: VersionPowerShellModule@2
   displayName: Version the PowerShell module manifests with the stable version number
