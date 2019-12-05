@@ -100,22 +100,24 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 			Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
 		}
 
-		# It 'Should register a new PS repository properly when piping in the Feed URL and RepositoryName by name' {
-		# 	# Arrange.
-		# 	[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
-		# 	[hashtable] $params = @{
-		# 		FeedUrl = $FeedUrl
-		# 		RepositoryName = $expectedRepositoryName
-		# 	}
-		# 	Remove-PsRepository -feedUrl $FeedUrl
+		It 'Should register a new PS repository properly when piping in the all of the parameters by property name' {
+			# Arrange.
+			[string] $expectedRepositoryName = 'AzureArtifactsPowerShellFeed'
+			[PSCustomObject] $params = [PSCustomObject]@{
+				FeedUrl = $FeedUrl
+				RepositoryName = $expectedRepositoryName
+				Credential = $Credential
+				Scope = 'CurrentUser'
+			}
+			Remove-PsRepository -feedUrl $FeedUrl
 
-		# 	# Act.
-		# 	[string] $repositoryName = ($params | Register-AzureArtifactsPSRepository)
+			# Act.
+			[string] $repositoryName = ($params | Register-AzureArtifactsPSRepository)
 
-		# 	# Assert.
-		# 	$repositoryName | Should -Be $expectedRepositoryName
-		# 	Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
-		# }
+			# Assert.
+			$repositoryName | Should -Be $expectedRepositoryName
+			Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
+	}
 	}
 
 	It 'Should register a new PS repository properly when passing in a valid Credential' {
@@ -280,5 +282,40 @@ Describe 'Importing a PowerShell module from Azure Artifacts' {
 		$module = Get-Module -Name $PowerShellModuleName
 		$module | Should -Not -BeNullOrEmpty
 		$module.Version | Should -Be $prereleaseVersionsStablePortion
+	}
+
+	It 'Should import the module properly when piping in the Repository Name' {
+		# Arrange.
+		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
+		[ScriptBlock] $action = {
+			$repositoryName | Import-AzureArtifactsModule -Name $PowerShellModuleName
+		}
+		Remove-PowerShellModule -powerShellModuleName $PowerShellModuleName
+
+		# Act and Assert.
+		$action | Should -Not -Throw
+		Get-Module -Name $PowerShellModuleName | Should -Not -BeNullOrEmpty
+	}
+
+	It 'Should import the module properly when piping in all of the parameters by property name' {
+		# Arrange.
+		[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
+		[PSCustomObject] $params = [PSCustomObject]@{
+				Name = $PowerShellModuleName
+				Version = $null
+				AllowPrerelease = $false
+				RepositoryName = $repositoryName
+				Credential = $Credential
+				Force = $false
+				Scope = 'CurrentUser'
+			}
+		[ScriptBlock] $action = {
+			$params | Import-AzureArtifactsModule
+		}
+		Remove-PowerShellModule -powerShellModuleName $PowerShellModuleName
+
+		# Act and Assert.
+		$action | Should -Not -Throw
+		Get-Module -Name $PowerShellModuleName | Should -Not -BeNullOrEmpty
 	}
 }

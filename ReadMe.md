@@ -16,9 +16,9 @@ Assuming you already have [an environment variable with your PAT setup][Microsof
 
 ```powershell
 Install-Module -Name AzureArtifactsPowerShellModuleHelper -Scope CurrentUser -Force
-[string] $feedUrl = 'https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2'
-[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $feedUrl
-Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -RepositoryName $repositoryName
+'https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2' |
+    Register-AzureArtifactsPSRepository |
+    Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed'
 ```
 
 For more information, continue reading.
@@ -54,6 +54,8 @@ PowerShell is not yet compatible with the `/v3` endpoint, so you must use `/v2`.
 
 Notice that the cmdlet returns back a Repository Name.
 Save this in a variable, as you will need to use this when interacting with other cmdlets in this module.
+
+If you already have a PSRepository setup for your feed then you can potentially skip calling this cmdlet, although it isn't recommended as this cmdlet also makes sure some other requirements are installed, such as the NuGet Package Provider and the minimum required version of PowerShellGet.
 
 You can confirm that your Azure Artifacts feed was registered by running the PowerShell command `Get-PSRepository`, and can remove it if needed using the command `Unregister-PSRepository -Name $repositoryName`.
 

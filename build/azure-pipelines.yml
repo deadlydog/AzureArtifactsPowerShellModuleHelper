@@ -10,7 +10,7 @@ pool:
   vmImage: 'windows-latest'
 
 # Only the name (i.e. Build.BuildNumber) can use "Rev:r", so use it for our version number.
-name: '1.1.$(Rev:r)'
+name: '1.2.$(Rev:r)'
 
 variables:
   versionNumber: '$(Build.BuildNumber)'

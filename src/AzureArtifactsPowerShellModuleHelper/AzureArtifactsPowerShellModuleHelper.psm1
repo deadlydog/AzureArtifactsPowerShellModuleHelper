@@ -214,23 +214,23 @@ function Import-AzureArtifactsModule
 	[CmdletBinding(DefaultParameterSetName = 'PAT')]
 	param
 	(
-		[Parameter(Mandatory = $true, Position = 0, HelpMessage = 'The name of the PowerShell module to install (if necessary) and import.')]
+		[Parameter(Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true, HelpMessage = 'The name of the PowerShell module to install (if necessary) and import.')]
 		[ValidateNotNullOrEmpty()]
 		[string] $Name,
 
-		[Parameter(Mandatory = $false, HelpMessage = 'The specific version of the PowerShell module to install (if necessary) and import. If not provided, the latest version will be used.')]
+		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, HelpMessage = 'The specific version of the PowerShell module to install (if necessary) and import. If not provided, the latest version will be used.')]
 		[string] $Version = $null,
 
-		[Parameter(Mandatory = $false, HelpMessage = 'If provided, prerelease versions are allowed to be installed and imported. This must be provided if specifying a Prerelease version in the Version parameter.')]
+		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, HelpMessage = 'If provided, prerelease versions are allowed to be installed and imported. This must be provided if specifying a Prerelease version in the Version parameter.')]
 		[switch] $AllowPrerelease = $false,
 
-		[Parameter(Mandatory = $true, HelpMessage = 'The name to use for the PSRepository that contains the module to import. This should be obtained from the Register-AzureArtifactsPSRepository cmdlet.')]
+		[Parameter(Mandatory = $false, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, HelpMessage = 'The name to use for the PSRepository that contains the module to import. This should be obtained from the Register-AzureArtifactsPSRepository cmdlet.')]
 		[string] $RepositoryName,
 
-		[Parameter(Mandatory = $false, HelpMessage = 'The credential to use to connect to the Azure Artifacts feed. This should be created from a personal access token that has at least Read permissions to the Azure Artifacts feed. If not provided, the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable will be checked, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables')]
+		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, HelpMessage = 'The credential to use to connect to the Azure Artifacts feed. This should be created from a personal access token that has at least Read permissions to the Azure Artifacts feed. If not provided, the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable will be checked, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables')]
 		[System.Management.Automation.PSCredential] $Credential = $null,
 
-		[Parameter(Mandatory = $false, HelpMessage = 'If provided, the specified PowerShell module will always be downloaded and installed, even if the version is already installed.')]
+		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, HelpMessage = 'If provided, the specified PowerShell module will always be downloaded and installed, even if the version is already installed.')]
 		[switch] $Force = $false,
 
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, HelpMessage = 'If the PowerShell Module needs to be installed, this is the scope it will be installed in. Allowed values are "AllUsers" and "CurrentUser". Default is "CurrentUser".')]
