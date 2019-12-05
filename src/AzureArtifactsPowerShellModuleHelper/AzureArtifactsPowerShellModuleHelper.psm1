@@ -201,10 +201,10 @@ function Register-AzureArtifactsPSRepository
 		{
 			[System.Version] $powerShellGetModuleVersionImported = $null
 			$lowestCurrentlyImportedModuleVersion =
-			Get-Module -Name PowerShellGet |
-			Select-Object -ExpandProperty 'Version' -Unique |
-			Sort-Object |
-			Select-Object -First 1
+				Get-Module -Name PowerShellGet |
+				Select-Object -ExpandProperty 'Version' -Unique |
+				Sort-Object |
+				Select-Object -First 1
 
 			if ($null -ne $lowestCurrentlyImportedModuleVersion)
 			{
