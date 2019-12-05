@@ -16,9 +16,9 @@ Assuming you already have [an environment variable with your PAT setup][Microsof
 
 ```powershell
 Install-Module -Name AzureArtifactsPowerShellModuleHelper -Scope CurrentUser -Force
-[string] $feedUrl = 'https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2'
-[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $feedUrl
-Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -RepositoryName $repositoryName
+'https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2' |
+    Register-AzureArtifactsPSRepository |
+    Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed'
 ```
 
 For more information, continue reading.
