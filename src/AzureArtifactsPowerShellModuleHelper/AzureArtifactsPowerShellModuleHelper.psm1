@@ -1,14 +1,19 @@
 <#
 .SYNOPSIS
 	Registers a PSRepository to the given Azure Artifacts feed if one does not already exist.
+	Also installs the latest NuGet Package Provider and PowerShellGet module if necessary, which are required by other cmdlets in the module.
 .DESCRIPTION
 	Registers a PSRepository to the given Azure Artifacts feed if one does not already exist.
+	If a PSRepository to the provided feed already exists, it will return the existing PSRepository's name, rather than creating a new one and using the RepositoryName parameter (if provided).
+
+	The cmdlet also installs the latest NuGet Package Provider and PowerShellGet module if necessary, which are required by other cmdlets in the module.
 .EXAMPLE
 	```
 	[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2 -RepositoryName 'MyAzureArtifacts'
 	```
 	Attempts to create a PSRepository to the given FeedUrl if one doesn't exist.
 	If one does not exist, one will be created with the name `MyAzureArtifacts`.
+	If one already exists, it will simply return the name of the existing PSRepository, rather than the provided one.
 	Since no Credential was provided, it will attempt to retrieve a PAT from the environmental variables.
 	The name of the PSRepository to the FeedUrl is returned.
 
@@ -65,6 +70,7 @@ function Register-AzureArtifactsPSRepository
 		$Credential = Get-AzureArtifactsCredential -credential $Credential
 
 		Install-NuGetPackageProvider -scope $Scope
+		Install-PowerShellGet -scope $Scope
 
 		[string] $repositoryNameOfFeed = Register-AzureArtifactsPowerShellRepository -feedUrl $FeedUrl -repositoryName $RepositoryName -credential $Credential
 
@@ -130,6 +136,26 @@ function Register-AzureArtifactsPSRepository
 				[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 				Write-Information 'Installing NuGet package provider for user '$currentUser' to scope '$scope'.'
 				Install-PackageProvider NuGet -Scope $scope -Force > $null
+			}
+		}
+
+		function Install-PowerShellGet([string] $scope)
+		{
+			[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+
+			[System.Version] $minimumRequiredPowerShellGetVersion = '2.2.1'
+			$latestPowerShellGetVersionInstalled =
+				Get-Module -Name 'PowerShellGet' -ListAvailable |
+				Select-Object -ExpandProperty 'Version' -Unique |
+				Sort-Object -Descending |
+				Select-Object -First 1
+
+			[bool] $minimumPowerShellGetVersionIsNotInstalled = ($latestPowerShellGetVersionInstalled -lt $minimumRequiredPowerShellGetVersion)
+			if ($minimumPowerShellGetVersionIsNotInstalled)
+			{
+				[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+				Write-Information 'Installing latest PowerShellGet version for user '$currentUser' to scope '$scope'.'
+				Install-Module -Name PowerShellGet -Scope $scope -Force -AllowClobber
 			}
 		}
 	}
