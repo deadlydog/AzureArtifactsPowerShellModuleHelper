@@ -145,7 +145,7 @@ function Register-AzureArtifactsPSRepository
 			{
 				$installedVersion = $nuGetPackageProviderModule.Version
 				Write-Information "Skipping installing the NuGet Package Provider, as version '$installedVersion' is already installed on computer '$computerName'."
-		}
+			}
 		}
 
 		function Install-PowerShellGet([string] $scope)
@@ -165,7 +165,7 @@ function Register-AzureArtifactsPSRepository
 			{
 				[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 				Write-Information "Installing latest PowerShellGet version for user '$currentUser' to scope '$scope' on computer '$computerName'."
-				Install-Module -Name PowerShellGet -Scope $scope -Force -AllowClobber
+				Install-Module -Name PowerShellGet -Repository PSGallery -Scope $scope -Force -AllowClobber
 			}
 			else
 			{
