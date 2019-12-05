@@ -55,6 +55,8 @@ PowerShell is not yet compatible with the `/v3` endpoint, so you must use `/v2`.
 Notice that the cmdlet returns back a Repository Name.
 Save this in a variable, as you will need to use this when interacting with other cmdlets in this module.
 
+If you already have a PSRepository setup for your feed then you can potentially skip calling this cmdlet, although it isn't recommended as this cmdlet also makes sure some other requirements are installed, such as the NuGet Package Provider and the minimum required version of PowerShellGet.
+
 You can confirm that your Azure Artifacts feed was registered by running the PowerShell command `Get-PSRepository`, and can remove it if needed using the command `Unregister-PSRepository -Name $repositoryName`.
 
 To get more details on what happens during this process, you can use the Information stream:
