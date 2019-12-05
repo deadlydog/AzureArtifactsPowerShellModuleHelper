@@ -2,9 +2,15 @@
 
 This is a PowerShell module that contains cmdlets that make it easier to work with PowerShell modules stored in Azure Artifacts (which is part of Azure DevOps).
 
-One main benefit of this package is not having to provide credentials for every call if you follow [the microsoft guidance][MicrosoftCredentialProviderEnvironmentVariableDocumentationUrl] and supply an environmental variable that contains your Azure Artifacts Personal Access Token (PAT).
+One main benefit of this package is not having to provide credentials for every call if you follow [the microsoft guidance to supply an environmental variable][MicrosoftCredentialProviderEnvironmentVariableDocumentationUrl] that contains your Azure Artifacts Personal Access Token (PAT).
 
 ## Quick-start guide
+
+The first step is to install this module, which can be done with the PowerShell command:
+
+```powershell
+Install-Module -Name AzureArtifactsPowerShellModuleHelper -Scope CurrentUser -Force
+```
 
 Assuming you already have [an environment variable with your PAT setup][MicrosoftCredentialProviderEnvironmentVariableDocumentationUrl], you can import your Azure Artifact modules using:
 
