@@ -28,6 +28,7 @@ Import-Module -Name $moduleFilePathToTest -Force
 [string] $ValidModulePrereleaseVersionThatExists = '1.0.66-ci20191121T214736'
 [System.Security.SecureString] $SecurePersonalAccessToken = ($AzureArtifactsPersonalAccessToken | ConvertTo-SecureString -AsPlainText -Force)
 [System.Management.Automation.PSCredential] $Credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $SecurePersonalAccessToken
+[System.Version] $MinimumRequiredPowerShellGetModuleVersion = [System.Version]::Parse('2.2.1')
 
 function Remove-PsRepository([string] $feedUrl)
 {
@@ -37,9 +38,8 @@ function Remove-PsRepository([string] $feedUrl)
 
 function Remove-PowerShellModule([string] $powerShellModuleName)
 {
-	Remove-Module -Name $PowerShellModuleName -Force -ErrorAction SilentlyContinue
-	# Uninstall-Module -Name $PowerShellModuleName -Force -AllVersions -AllowPrerelease # Commented out because it causes file-in-use errors.
-	Get-Module -Name $PowerShellModuleName | Should -BeNullOrEmpty
+	Remove-Module -Name $powerShellModuleName -Force -ErrorAction SilentlyContinue
+	Get-Module -Name $powerShellModuleName | Should -BeNullOrEmpty
 }
 
 Describe 'Registering an Azure Artifacts PS Repository' {
@@ -117,7 +117,51 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 			# Assert.
 			$repositoryName | Should -Be $expectedRepositoryName
 			Get-PSRepository -Name $repositoryName | Should -Not -BeNullOrEmpty
-	}
+		}
+
+		It 'Should import the PowerShellGet module properly when it is not imported yet' {
+			# Arrange.
+			Remove-PowerShellModule -powerShellModuleName PowerShellGet
+
+			# Act.
+			Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
+
+			# Assert.
+			$powerShellGetModuleImported = Get-Module -Name PowerShellGet
+			$powerShellGetModuleImported | Should -Not -BeNullOrEmpty
+			$powerShellGetModuleImported.Version | Should -BeGreaterOrEqual $MinimumRequiredPowerShellGetModuleVersion
+		}
+
+		It 'Should import remove the existing PowerShellGet module and import a newer version properly' {
+			# Arrange.
+			[System.Version] $notHighEnoughPowerShellGetModuleVersion = [System.Version]::Parse('2.0.4')
+			Remove-PowerShellModule -powerShellModuleName PowerShellGet
+			Install-Module -Name PowerShellGet -RequiredVersion $notHighEnoughPowerShellGetModuleVersion
+			Import-Module -Name PowerShellGet -RequiredVersion $notHighEnoughPowerShellGetModuleVersion -Force
+
+			# Act.
+			Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
+
+			# Assert.
+			$powerShellGetModuleImported = Get-Module -Name PowerShellGet
+			$powerShellGetModuleImported | Should -Not -BeNullOrEmpty
+			$powerShellGetModuleImported.Version | Should -BeGreaterOrEqual $MinimumRequiredPowerShellGetModuleVersion
+		}
+
+		It 'Should import the PowerShellGet module properly when a high enough version is already imported' {
+			# Arrange.
+			Remove-PowerShellModule -powerShellModuleName PowerShellGet
+			Install-Module -Name PowerShellGet -MinimumVersion $MinimumRequiredPowerShellGetModuleVersion
+			Import-Module -Name PowerShellGet -MinimumVersion $MinimumRequiredPowerShellGetModuleVersion
+
+			# Act.
+			Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
+
+			# Assert.
+			$powerShellGetModuleImported = Get-Module -Name PowerShellGet
+			$powerShellGetModuleImported | Should -Not -BeNullOrEmpty
+			$powerShellGetModuleImported.Version | Should -BeGreaterOrEqual $MinimumRequiredPowerShellGetModuleVersion
+		}
 	}
 
 	It 'Should register a new PS repository properly when passing in a valid Credential' {

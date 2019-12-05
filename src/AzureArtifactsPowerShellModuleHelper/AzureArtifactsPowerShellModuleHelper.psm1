@@ -172,8 +172,46 @@ function Register-AzureArtifactsPSRepository
 				Write-Information "Skipping installing the PowerShellGet module, as version '$latestPowerShellGetVersionInstalled' is already installed on computer '$computerName', which satisfies the minimum required version '$minimumRequiredPowerShellGetVersion'."
 			}
 
-			# Explicitly import the latest version of PowerShellGet to ensure it gets used by later cmdlets instead of an earlier version.
+			Import-PowerShellGetModule -minimumRequiredPowerShellGetVersion $minimumRequiredPowerShellGetVersion
+		}
+
+		function Import-PowerShellGetModule([System.Version] $minimumRequiredPowerShellGetVersion)
+		{
+			$currentlyImportedVersion = Get-CurrentlyImportedPowerShellGetModuleVersion
+
+			[bool] $powerShellGetIsNotAlreadyImported = ($null -eq $currentlyImportedVersion)
+			if ($powerShellGetIsNotAlreadyImported)
+			{
+				Import-Module -Name PowerShellGet -MinimumVersion $minimumRequiredPowerShellGetVersion -Global -Force
+				return
+			}
+
+			[bool] $powerShellGetVersionImportedIsHighEnough = ($currentlyImportedVersion -ge $minimumRequiredPowerShellGetVersion)
+			if ($powerShellGetVersionImportedIsHighEnough)
+			{
+				return
+			}
+
+			Write-Warning "The PowerShellGet module version currently imported is '$currentlyImportedVersion', which does not meet the minimum requirement of '$minimumRequiredPowerShellGetVersion'. The current PowerShellGet module will be removed and a newer version imported."
+			Remove-Module -Name PowerShellGet -Force
 			Import-Module -Name PowerShellGet -MinimumVersion $minimumRequiredPowerShellGetVersion -Global -Force
+		}
+
+		function Get-CurrentlyImportedPowerShellGetModuleVersion
+		{
+			[System.Version] $powerShellGetModuleVersionImported = $null
+			$lowestCurrentlyImportedModuleVersion =
+			Get-Module -Name PowerShellGet |
+			Select-Object -ExpandProperty 'Version' -Unique |
+			Sort-Object |
+			Select-Object -First 1
+
+			if ($null -ne $lowestCurrentlyImportedModuleVersion)
+			{
+				$powerShellGetModuleVersionImported = $lowestCurrentlyImportedModuleVersion
+			}
+
+			return $powerShellGetModuleVersionImported
 		}
 	}
 }
@@ -261,7 +299,10 @@ function Import-AzureArtifactsModule
 		{
 			[string] $computerName = $Env:ComputerName
 
-			[string[]] $currentModuleVersionsInstalled = (Get-Module -Name $powerShellModuleName -ListAvailable) | Select-Object -ExpandProperty 'Version' -Unique | Sort-Object -Descending
+			[string[]] $currentModuleVersionsInstalled =
+				Get-Module -Name $powerShellModuleName -ListAvailable |
+				Select-Object -ExpandProperty 'Version' -Unique |
+				Sort-Object -Descending
 
 			[bool] $specificVersionWasRequestedAndIsAlreadyInstalled = ((![string]::IsNullOrWhitespace($versionToInstall)) -and $versionToInstall -in $currentModuleVersionsInstalled)
 			if ($specificVersionWasRequestedAndIsAlreadyInstalled)
