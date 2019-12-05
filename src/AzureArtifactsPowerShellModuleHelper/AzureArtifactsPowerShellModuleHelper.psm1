@@ -130,17 +130,27 @@ function Register-AzureArtifactsPSRepository
 
 		function Install-NuGetPackageProvider([string] $scope)
 		{
-			[bool] $nuGetPackageProviderIsNotInstalled = ($null -eq (Get-PackageProvider | Where-Object { $_.Name -ieq 'NuGet' }))
+			[string] $computerName = $Env:ComputerName
+			[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+
+			$nuGetPackageProviderModule = Get-PackageProvider | Where-Object { $_.Name -ieq 'NuGet' }
+
+			[bool] $nuGetPackageProviderIsNotInstalled = ($null -eq $nuGetPackageProviderModule)
 			if ($nuGetPackageProviderIsNotInstalled)
 			{
-				[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
-				Write-Information 'Installing NuGet package provider for user '$currentUser' to scope '$scope'.'
+				Write-Information "Installing NuGet package provider for user '$currentUser' to scope '$scope' on computer '$computerName'."
 				Install-PackageProvider NuGet -Scope $scope -Force > $null
 			}
+			else
+			{
+				$installedVersion = $nuGetPackageProviderModule.Version
+				Write-Information "Skipping installing the NuGet Package Provider, as version '$installedVersion' is already installed on computer '$computerName'."
+		}
 		}
 
 		function Install-PowerShellGet([string] $scope)
 		{
+			[string] $computerName = $Env:ComputerName
 			[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 
 			[System.Version] $minimumRequiredPowerShellGetVersion = '2.2.1'
@@ -154,8 +164,12 @@ function Register-AzureArtifactsPSRepository
 			if ($minimumPowerShellGetVersionIsNotInstalled)
 			{
 				[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
-				Write-Information 'Installing latest PowerShellGet version for user '$currentUser' to scope '$scope'.'
+				Write-Information "Installing latest PowerShellGet version for user '$currentUser' to scope '$scope' on computer '$computerName'."
 				Install-Module -Name PowerShellGet -Scope $scope -Force -AllowClobber
+			}
+			else
+			{
+				Write-Information "Skipping installing the PowerShellGet module, as version '$latestPowerShellGetVersionInstalled' is already installed on computer '$computerName', which satisfies the minimum required version '$minimumRequiredPowerShellGetVersion'."
 			}
 		}
 	}
