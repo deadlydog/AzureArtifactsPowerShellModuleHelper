@@ -132,11 +132,11 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 			$powerShellGetModuleImported.Version | Should -BeGreaterOrEqual $MinimumRequiredPowerShellGetModuleVersion
 		}
 
-		It 'Should import remove the existing PowerShellGet module and import a newer version properly' {
+		It 'Should remove the existing too-low PowerShellGet module and import a newer version properly' {
 			# Arrange.
 			[System.Version] $notHighEnoughPowerShellGetModuleVersion = [System.Version]::Parse('2.0.4')
 			Remove-PowerShellModule -powerShellModuleName PowerShellGet
-			Install-Module -Name PowerShellGet -RequiredVersion $notHighEnoughPowerShellGetModuleVersion
+			Install-Module -Name PowerShellGet -RequiredVersion $notHighEnoughPowerShellGetModuleVersion -Force
 			Import-Module -Name PowerShellGet -RequiredVersion $notHighEnoughPowerShellGetModuleVersion -Force
 
 			# Act.
@@ -151,7 +151,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 		It 'Should import the PowerShellGet module properly when a high enough version is already imported' {
 			# Arrange.
 			Remove-PowerShellModule -powerShellModuleName PowerShellGet
-			Install-Module -Name PowerShellGet -MinimumVersion $MinimumRequiredPowerShellGetModuleVersion
+			Install-Module -Name PowerShellGet -MinimumVersion $MinimumRequiredPowerShellGetModuleVersion -Force
 			Import-Module -Name PowerShellGet -MinimumVersion $MinimumRequiredPowerShellGetModuleVersion
 
 			# Act.
