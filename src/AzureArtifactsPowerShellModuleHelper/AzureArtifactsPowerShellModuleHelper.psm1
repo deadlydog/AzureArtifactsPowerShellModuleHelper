@@ -31,7 +31,7 @@
 
 	Credential: The credential to use to connect to the Azure Artifacts feed. This should be created from a personal access token that has at least Read permissions to the Azure Artifacts feed. If not provided, the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable will be checked, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables.
 
-	Scope: If the NuGet Package Provider needs to be installed, this is the scope it will be installed in. Allowed values are "AllUsers" and "CurrentUser". Default is "CurrentUser".
+	Scope: If the NuGet Package Provider or PowerShellGet module needs to be installed, this is the scope it will be installed in. Allowed values are "AllUsers" and "CurrentUser". Default is "CurrentUser".
 .OUTPUTS
 	System.String
 	Returns the Name of the PSRepository that can be used to connect to the given Feed URL.
@@ -54,7 +54,7 @@ function Register-AzureArtifactsPSRepository
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, HelpMessage = 'The credential to use to connect to the Azure Artifacts feed. This should be created from a personal access token that has at least Read permissions to the Azure Artifacts feed. If not provided, the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable will be checked, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables')]
 		[System.Management.Automation.PSCredential] $Credential = $null,
 
-		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, HelpMessage = 'If the NuGet Package Provider needs to be installed, this is the scope it will be installed in. Allowed values are "AllUsers" and "CurrentUser". Default is "CurrentUser".')]
+		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, HelpMessage = 'If the NuGet Package Provider or PowerShellGet module needs to be installed, this is the scope it will be installed in. Allowed values are "AllUsers" and "CurrentUser". Default is "CurrentUser".')]
 		[ValidateSet('AllUsers', 'CurrentUser')]
 		[string] $Scope = 'CurrentUser'
 	)
