@@ -9,15 +9,15 @@ One main benefit of this package is not having to provide credentials for every 
 The first step is to install this module, which can be done with the PowerShell command:
 
 ```powershell
-Install-Module -Name AzureArtifactsPowerShellModuleHelper -Scope CurrentUser -Force
+Install-Module -Name AzureArtifactsPowerShellModuleHelper -Scope CurrentUser -Force -MaximumVersion 1.9999
 ```
 
-The `-Scope CurrentUser` is used so that admin permissions are not required, and `-Force` is used to suppress any user prompts.
+`-Scope CurrentUser` is used so that admin permissions are not required, `-Force` is used to suppress any user prompts, and `-MaximumVersion 1.9999` is used to ensure scripts using this module continue to work if a breaking change is introduced and the major version is incremented.
 
 Assuming you already have [an environment variable with your PAT setup][MicrosoftCredentialProviderEnvironmentVariableDocumentationUrl], you can import your Azure Artifact modules using:
 
 ```powershell
-Install-Module -Name AzureArtifactsPowerShellModuleHelper -Scope CurrentUser -Force
+Install-Module -Name AzureArtifactsPowerShellModuleHelper -Scope CurrentUser -Force -MaximumVersion 1.9999
 'https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2' |
     Register-AzureArtifactsPSRepository |
     Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed'
