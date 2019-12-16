@@ -280,14 +280,14 @@ function Import-AzureArtifactsModule
 	{
 		$Credential = Get-AzureArtifactsCredential -credential $Credential
 
-		if ($null -eq $credential)
+		if ($null -eq $Credential)
 		{
 			[string] $computerName = $Env:ComputerName
 			Write-Error "A personal access token was not found, so we cannot ensure a specific version (or the latest version) of PowerShell module '$Name' is installed on '$computerName'."
 		}
 		else
 		{
-			$Version = Install-ModuleVersion -powerShellModuleName $Name -versionToInstall $Version -allowPrerelease:$AllowPrerelease -repositoryName $RepositoryName -credential $credential -force:$Force -scope $Scope
+			$Version = Install-ModuleVersion -powerShellModuleName $Name -versionToInstall $Version -allowPrerelease:$AllowPrerelease -repositoryName $RepositoryName -credential $Credential -force:$Force -scope $Scope
 		}
 
 		Import-ModuleVersion -powerShellModuleName $Name -version $Version
