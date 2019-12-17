@@ -48,7 +48,7 @@ Before you can interact with your Azure Artifacts feed, you will need to registe
 
 ```powershell
 [string] $feedUrl = 'https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2'
-[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $feedUrl
+[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $feedUrl
 ```
 
 __Important:__ When retrieving your feed's URL from Azure DevOps, it will often specify a `/v3` endpoint.
@@ -59,12 +59,12 @@ Save this in a variable, as you will need to use this when interacting with othe
 
 If you already have a PSRepository setup for your feed then you can potentially skip calling this cmdlet, although it isn't recommended as this cmdlet also makes sure some other requirements are installed, such as the NuGet Package Provider and the minimum required version of PowerShellGet.
 
-You can confirm that your Azure Artifacts feed was registered by running the PowerShell command `Get-PSRepository`, and can remove it if needed using the command `Unregister-PSRepository -Name $repositoryName`.
+You can confirm that your Azure Artifacts feed was registered by running the PowerShell command `Get-PSRepository`, and can remove it if needed using the command `Unregister-PSRepository -Name $repository`.
 
 To get more details on what happens during this process, you can use the Information stream:
 
 ```powershell
-[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $feedUrl -InformationAction Continue
+[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $feedUrl -InformationAction Continue
 ```
 
 ### Explicitly using your Personal Access Token
@@ -77,7 +77,7 @@ You can provide a Credential object like this:
 [System.Security.SecureString] $securePersonalAccessToken = 'YourPatGoesHere' | ConvertTo-SecureString -AsPlainText -Force
 [System.Management.Automation.PSCredential] $Credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $securePersonalAccessToken
 [string] $feedUrl = 'https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2'
-[string] $repositoryName = Register-AzureArtifactsPSRepository -Credential $credential -FeedUrl $feedUrl
+[string] $repository = Register-AzureArtifactsPSRepository -Credential $credential -FeedUrl $feedUrl
 ```
 
 If a Credential is provided, it will be used instead of any value stored in the `VSS_NUGET_EXTERNAL_FEED_ENDPOINTS` environment variable.
@@ -89,17 +89,17 @@ __NOTE:__ You should avoid committing your Personal Access Token to source contr
 Now that you have your Azure Artifacts feed registered, you can import it by using the `Import-AzureArtifactsModule` module:
 
 ```powershell
-Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -RepositoryName $repositoryName
+Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Repository $repository
 ```
 
-The `$repositoryName` is the value that was returned from the `Register-AzureArtifactsPSRepository` cmdlet above.
+The `$repository` is the value that was returned from the `Register-AzureArtifactsPSRepository` cmdlet above.
 
 The module will be installed if necessary, and then imported.
 
 To get more details on what version was installed and imported, you can use the Information stream:
 
 ```powershell
-Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -RepositoryName $repositoryName -InformationAction Continue
+Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Repository $repository -InformationAction Continue
 ```
 
 #### Importing a specific version
@@ -107,7 +107,7 @@ Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -RepositoryName $reposi
 You can import a specific module version by using the `Version` parameter:
 
 ```powershell
-Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Version '1.2.3' -RepositoryName $repositoryName
+Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Version '1.2.3' -Repository $repository
 ```
 
 #### Importing a prerelease version
@@ -115,7 +115,7 @@ Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Version '1.2.3' -Repos
 If you want to install and import a prerelease version, you must also provide the `AllowPrerelease` parameter:
 
 ```powershell
-Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Version '1.2.3-beta1' -AllowPrerelease -RepositoryName $repositoryName
+Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Version '1.2.3-beta1' -AllowPrerelease -Repository $repository
 ````
 
 #### Force a download and reinstall
@@ -123,7 +123,7 @@ Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Version '1.2.3-beta1' 
 Use the `Force` parameter to force a module to be downloaded and installed, even if it already exists on the computer:
 
 ```powershell
-Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Force -RepositoryName $repositoryName
+Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Force -Repository $repository
 ```
 
 [MicrosoftCredentialProviderEnvironmentVariableDocumentationUrl]: https://github.com/Microsoft/artifacts-credprovider#environment-variables
