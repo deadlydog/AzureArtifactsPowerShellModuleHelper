@@ -373,6 +373,19 @@ Describe 'Installing a PowerShell module from Azure Artifacts' {
 
 		# Act and Assert.
 		$action | Should -Not -Throw
-		Get-Module -Name $PowerShellModuleName | Should -Not -BeNullOrEmpty
+		Get-Module -Name $PowerShellModuleName -ListAvailable | Should -Not -BeNullOrEmpty
+	}
+}
+
+Describe 'Finding a PowerShell module from Azure Artifacts' {
+	It 'Should find the module properly' {
+		# Arrange.
+		[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
+		[ScriptBlock] $action = { Find-AzureArtifactsModule -Name $PowerShellModuleName -Repository $repository }
+		Remove-PowerShellModule -powerShellModuleName $PowerShellModuleName
+
+		# Act and Assert.
+		$action | Should -Not -Throw
+		$action | Should -Not -BeNullOrEmpty
 	}
 }

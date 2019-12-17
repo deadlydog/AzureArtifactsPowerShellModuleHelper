@@ -477,46 +477,209 @@ function Register-AzureArtifactsPSRepository
 
 function Find-AzureArtifactsModule
 {
-	[CmdletBinding()]
-	param
+	# Entire Param section was copy-pasted from the Find-Module function: https://github.com/PowerShell/PowerShellGet/blob/development/src/PowerShellGet/public/psgetfunctions/Find-Module.ps1
+	# This was done so that we can easily splat this function to the Find-Module function, while providing the same intellisense experience.
+	[CmdletBinding(HelpUri = 'https://go.microsoft.com/fwlink/?LinkID=398574')]
+	[outputtype("PSCustomObject[]")]
+	Param
 	(
-		[Parameter(Mandatory = $false)]
-		[System.Management.Automation.PSCredential] $Credential
+		[Parameter(ValueFromPipelineByPropertyName = $true,
+			Position = 0)]
+		[ValidateNotNullOrEmpty()]
+		[string[]]
+		$Name,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[ValidateNotNull()]
+		[string]
+		$MinimumVersion,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[ValidateNotNull()]
+		[string]
+		$MaximumVersion,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[ValidateNotNull()]
+		[string]
+		$RequiredVersion,
+
+		[Parameter()]
+		[switch]
+		$AllVersions,
+
+		[Parameter()]
+		[switch]
+		$IncludeDependencies,
+
+		[Parameter()]
+		[ValidateNotNull()]
+		[string]
+		$Filter,
+
+		[Parameter()]
+		[ValidateNotNull()]
+		[string[]]
+		$Tag,
+
+		[Parameter()]
+		[ValidateNotNull()]
+		[ValidateSet('DscResource', 'Cmdlet', 'Function', 'RoleCapability')]
+		[string[]]
+		$Includes,
+
+		[Parameter()]
+		[ValidateNotNull()]
+		[string[]]
+		$DscResource,
+
+		[Parameter()]
+		[ValidateNotNull()]
+		[string[]]
+		$RoleCapability,
+
+		[Parameter()]
+		[ValidateNotNull()]
+		[string[]]
+		$Command,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[ValidateNotNullOrEmpty()]
+		[Uri]
+		$Proxy,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[PSCredential]
+		$ProxyCredential,
+
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string[]]
+		$Repository,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[PSCredential]
+		$Credential,
+
+		[Parameter()]
+		[switch]
+		$AllowPrerelease
 	)
 
-	$newArgs = Add-CredentialToArgs -credential $Credential -arguments $Args
-	Find-Module @newArgs
+	[hashtable] $parametersWithCredentials = Get-PsBoundParametersWithCredential -parameters $PSBoundParameters
+	Find-Module @parametersWithCredentials
 }
 
 function Install-AzureArtifactsModule
 {
-	# [CmdletBinding()]
-	# param
-	# (
-	# 	[Parameter(Mandatory = $false)]
-	# 	[System.Management.Automation.PSCredential] $Credential
-	# )
+	# Entire Param section was copy-pasted from the Install-Module function: https://github.com/PowerShell/PowerShellGet/blob/development/src/PowerShellGet/public/psgetfunctions/Install-Module.ps1
+	# This was done so that we can easily splat this function to the Install-Module function, while providing the same intellisense experience.
+	[CmdletBinding(DefaultParameterSetName = 'NameParameterSet',
+		HelpUri = 'https://go.microsoft.com/fwlink/?LinkID=398573',
+		SupportsShouldProcess = $true)]
+	Param
+	(
+		[Parameter(Mandatory = $true,
+			ValueFromPipelineByPropertyName = $true,
+			Position = 0,
+			ParameterSetName = 'NameParameterSet')]
+		[ValidateNotNullOrEmpty()]
+		[string[]]
+		$Name,
 
-	# $newArgs = Add-CredentialToArgs -credential $Credential -arguments $Args
-	$newArgs = Add-CredentialToArgs -arguments $Args
-	Install-Module @newArgs
+		[Parameter(Mandatory = $true,
+			ValueFromPipeline = $true,
+			ValueFromPipelineByPropertyName = $true,
+			Position = 0,
+			ParameterSetName = 'InputObject')]
+		[ValidateNotNull()]
+		[PSCustomObject[]]
+		$InputObject,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true,
+			ParameterSetName = 'NameParameterSet')]
+		[ValidateNotNull()]
+		[string]
+		$MinimumVersion,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true,
+			ParameterSetName = 'NameParameterSet')]
+		[ValidateNotNull()]
+		[string]
+		$MaximumVersion,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true,
+			ParameterSetName = 'NameParameterSet')]
+		[ValidateNotNull()]
+		[string]
+		$RequiredVersion,
+
+		[Parameter(ParameterSetName = 'NameParameterSet')]
+		[ValidateNotNullOrEmpty()]
+		[string[]]
+		$Repository,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[PSCredential]
+		$Credential,
+
+		[Parameter()]
+		[ValidateSet("CurrentUser", "AllUsers")]
+		[string]
+		$Scope,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[ValidateNotNullOrEmpty()]
+		[Uri]
+		$Proxy,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[PSCredential]
+		$ProxyCredential,
+
+		[Parameter()]
+		[switch]
+		$AllowClobber,
+
+		[Parameter()]
+		[switch]
+		$SkipPublisherCheck,
+
+		[Parameter()]
+		[switch]
+		$Force,
+
+		[Parameter(ParameterSetName = 'NameParameterSet')]
+		[switch]
+		$AllowPrerelease,
+
+		[Parameter()]
+		[switch]
+		$AcceptLicense,
+
+		[Parameter()]
+		[switch]
+		$PassThru
+	)
+
+	[hashtable] $parametersWithCredentials = Get-PsBoundParametersWithCredential -parameters $PSBoundParameters
+	Install-Module @parametersWithCredentials
 }
 
-function Add-CredentialToArgs([System.Management.Automation.PSCredential] $credential, [Object[]] $arguments)
+function Get-PsBoundParametersWithCredential([hashtable] $parameters)
 {
-	$credential = Get-AzureArtifactsCredential -credential $credential
+	[PSCredential] $credential = Get-AzureArtifactsCredential -credential $parameters.Credential
 
 	if ($null -eq $credential)
 	{
 		[string] $computerName = $Env:ComputerName
 		Write-Warning "A personal access token was not found on '$computerName', so we could not dynamically obtain the credential to use."
 	}
-	else
-	{
-		$arguments = $arguments + '-Credential' + $credential
-	}
 
-	return $arguments
+	$newParameters = $parameters
+	$newParameters.Credential = $credential
+
+	return $newParameters
 }
 
 function Get-AzureArtifactsCredential([System.Management.Automation.PSCredential] $credential = $null)
