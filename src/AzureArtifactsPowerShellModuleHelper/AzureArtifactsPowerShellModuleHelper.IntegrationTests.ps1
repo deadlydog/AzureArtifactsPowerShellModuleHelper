@@ -27,7 +27,7 @@ Import-Module -Name $moduleFilePathToTest -Force
 [string] $InvalidModuleVersionThatDoesNotExist = '1.0.99999'
 [string] $ValidModulePrereleaseVersionThatExists = '1.0.66-ci20191121T214736'
 [System.Security.SecureString] $SecurePersonalAccessToken = ($AzureArtifactsPersonalAccessToken | ConvertTo-SecureString -AsPlainText -Force)
-[System.Management.Automation.PSCredential] $Credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $SecurePersonalAccessToken
+[PSCredential] $Credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $SecurePersonalAccessToken
 [System.Version] $MinimumRequiredPowerShellGetModuleVersion = [System.Version]::Parse('2.2.1')
 
 function Remove-PsRepository([string] $feedUrl)
@@ -287,7 +287,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 # 	It 'Should throw an error if the Credential is invalid' {
 # 		# Arrange.
 # 		[System.Security.SecureString] $invalidPat = 'InvalidPat' | ConvertTo-SecureString -AsPlainText -Force
-# 		[System.Management.Automation.PSCredential] $invalidCredential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $invalidPat
+# 		[PSCredential] $invalidCredential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $invalidPat
 # 		[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
 
 # 		# Act.

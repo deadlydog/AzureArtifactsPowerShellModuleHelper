@@ -19,7 +19,7 @@
 
 	```
 	[System.Security.SecureString] $securePersonalAccessToken = 'YourPatGoesHere' | ConvertTo-SecureString -AsPlainText -Force
-	[System.Management.Automation.PSCredential] $Credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $securePersonalAccessToken
+	[PSCredential] $Credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $securePersonalAccessToken
 	[string] $feedUrl = 'https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2'
 	[string] $repository = Register-AzureArtifactsPSRepository -Credential $credential -FeedUrl $feedUrl
 	```
@@ -53,7 +53,7 @@ function Register-AzureArtifactsPSRepository
 		[string] $Repository,
 
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, HelpMessage = 'The credential to use to connect to the Azure Artifacts feed. This should be created from a personal access token that has at least Read permissions to the Azure Artifacts feed. If not provided, the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable will be checked, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables')]
-		[System.Management.Automation.PSCredential] $Credential = $null,
+		[PSCredential] $Credential = $null,
 
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, HelpMessage = 'If the NuGet Package Provider or PowerShellGet module needs to be installed, this is the scope it will be installed in. Allowed values are "AllUsers" and "CurrentUser". Default is "CurrentUser".')]
 		[ValidateSet('AllUsers', 'CurrentUser')]
@@ -80,7 +80,7 @@ function Register-AzureArtifactsPSRepository
 
 	Begin
 	{
-		function Register-AzureArtifactsPowerShellRepository([string] $feedUrl, [string] $repository, [System.Management.Automation.PSCredential] $credential)
+		function Register-AzureArtifactsPowerShellRepository([string] $feedUrl, [string] $repository, [PSCredential] $credential)
 		{
 			$psRepositories = Get-PSRepository
 
@@ -267,7 +267,7 @@ function Register-AzureArtifactsPSRepository
 # 		[string] $Repository,
 
 # 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, HelpMessage = 'The credential to use to connect to the Azure Artifacts feed. This should be created from a personal access token that has at least Read permissions to the Azure Artifacts feed. If not provided, the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable will be checked, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables')]
-# 		[System.Management.Automation.PSCredential] $Credential = $null,
+# 		[PSCredential] $Credential = $null,
 
 # 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, HelpMessage = 'If provided, the specified PowerShell module will always be downloaded and installed, even if the version is already installed.')]
 # 		[switch] $Force = $false,
@@ -296,7 +296,7 @@ function Register-AzureArtifactsPSRepository
 
 # 	Begin
 # 	{
-# 		function Install-ModuleVersion([string] $powerShellModuleName, [string] $versionToInstall, [switch] $allowPrerelease, [string] $repository, [System.Management.Automation.PSCredential] $credential, [switch] $force, [string] $scope)
+# 		function Install-ModuleVersion([string] $powerShellModuleName, [string] $versionToInstall, [switch] $allowPrerelease, [string] $repository, [PSCredential] $credential, [switch] $force, [string] $scope)
 # 		{
 # 			[string] $computerName = $Env:ComputerName
 
@@ -397,7 +397,7 @@ function Register-AzureArtifactsPSRepository
 # 			return $versionToInstall
 # 		}
 
-# 		function Get-LatestAvailableVersion([string] $powerShellModuleName, [switch] $allowPrerelease, [string] $repository, [System.Management.Automation.PSCredential] $credential)
+# 		function Get-LatestAvailableVersion([string] $powerShellModuleName, [switch] $allowPrerelease, [string] $repository, [PSCredential] $credential)
 # 		{
 # 			[string] $latestModuleVersionAvailable =
 # 				Find-Module -Name $powerShellModuleName -AllowPrerelease:$allowPrerelease -Repository $repository -Credential $credential -ErrorAction SilentlyContinue |
@@ -682,7 +682,7 @@ function Get-PsBoundParametersWithCredential([hashtable] $parameters)
 	return $newParameters
 }
 
-function Get-AzureArtifactsCredential([System.Management.Automation.PSCredential] $credential = $null)
+function Get-AzureArtifactsCredential([PSCredential] $credential = $null)
 {
 	if ($null -ne $credential)
 	{
