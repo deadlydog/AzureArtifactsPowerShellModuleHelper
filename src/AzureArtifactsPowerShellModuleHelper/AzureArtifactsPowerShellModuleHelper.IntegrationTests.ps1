@@ -42,8 +42,15 @@ function Remove-PowerShellModule([string] $powerShellModuleName)
 	Get-Module -Name $powerShellModuleName | Should -BeNullOrEmpty
 }
 
+function Uninstall-PowerShellModule([string] $powerShellModuleName)
+{
+	Remove-PowerShellModule -powerShellModuleName $powerShellModuleName
+	Uninstall-Module -Name $powerShellModuleName -AllVersions -Force
+	Get-Module -Name $powerShellModuleName -ListAvailable | Should -BeNullOrEmpty
+}
+
 Describe 'Registering an Azure Artifacts PS Repository' {
-	Context 'When relying on retrieving the Azure Artifacts PAT from the environment variable'{
+	Context 'When relying on retrieving the Azure Artifacts PAT from the environment variable that exists' {
 		Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
 
 		It 'Should register a new PS repository properly when relying in PAT from environmental variable' {
@@ -368,8 +375,8 @@ Describe 'Installing a PowerShell module from Azure Artifacts' {
 	It 'Should install the module properly' {
 		# Arrange.
 		[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
-		[ScriptBlock] $action = { Install-AzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -Force }
-		Remove-PowerShellModule -powerShellModuleName $PowerShellModuleName
+		[ScriptBlock] $action = { Install-AzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -Force -ErrorAction Stop }
+		Uninstall-PowerShellModule -powerShellModuleName $PowerShellModuleName
 
 		# Act and Assert.
 		$action | Should -Not -Throw
@@ -378,14 +385,38 @@ Describe 'Installing a PowerShell module from Azure Artifacts' {
 }
 
 Describe 'Finding a PowerShell module from Azure Artifacts' {
-	It 'Should find the module properly' {
+	Context 'When relying on retrieving the Azure Artifacts PAT from the environment variable that exists' {
+		It 'Should find the module properly' {
+			# Arrange.
+			[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
+			[ScriptBlock] $action = { Find-AzureArtifactsModule -Name $PowerShellModuleName -Repository $repository }
+
+			# Act and Assert.
+			$action | Should -Not -BeNullOrEmpty
+		}
+	}
+
+	Context 'When connecting to a feed without using a Credential' {
+		Mock Get-AzureArtifactsCredential { return $null } -ModuleName $ModuleNameBeingTested
+
+		It 'Should throw an exception' {
+			# Arrange.
+			[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
+			[scriptblock] $action = { Find-AzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -ErrorAction Stop }
+
+			# Act and Assert.
+			$action | Should -Throw "Unable to find repository"
+		}
+	}
+
+	It 'Should throw an exception when the Credential is invalid' {
 		# Arrange.
+		[System.Security.SecureString] $invalidPat = 'InvalidPat' | ConvertTo-SecureString -AsPlainText -Force
+		[PSCredential] $invalidCredential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $invalidPat
 		[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
-		[ScriptBlock] $action = { Find-AzureArtifactsModule -Name $PowerShellModuleName -Repository $repository }
-		Remove-PowerShellModule -powerShellModuleName $PowerShellModuleName
+		[scriptblock] $action = { Find-AzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -Credential $invalidCredential -ErrorAction Stop }
 
 		# Act and Assert.
-		$action | Should -Not -Throw
-		$action | Should -Not -BeNullOrEmpty
+		$action | Should -Throw "No match was found for the specified search criteria and module name"
 	}
 }
