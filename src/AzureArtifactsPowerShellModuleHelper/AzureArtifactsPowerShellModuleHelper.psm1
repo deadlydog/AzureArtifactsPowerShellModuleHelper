@@ -36,7 +36,7 @@
 	System.String
 	Returns the Name of the PSRepository that can be used to connect to the given Feed URL.
 .NOTES
-	If a Credential is not provided, it will attempt to retrieve a PAT from the environment variables, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables
+	If a Credential is not provided, it will attempt create one by retrieving a Personal Access Token (PAT) from the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables.
 
 	This function writes to the error, warning, and information streams in different scenarios, as well as may throw exceptions for catastrophic errors.
 #>
@@ -475,6 +475,28 @@ function Register-AzureArtifactsPSRepository
 # 	}
 # }
 
+<#
+.SYNOPSIS
+	A proxy function to Find-Module that first tries to dynamically obtain a Credential if one was not provided.
+.DESCRIPTION
+	A proxy function to Find-Module that first tries to dynamically obtain a Credential if one was not provided.
+
+	If a Credential is not provided, it will attempt create one by retrieving a Personal Access Token (PAT) from the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables.
+
+	The Find-Module help can be viewed at: https://docs.microsoft.com/en-us/powershell/module/powershellget/find-module
+.EXAMPLE
+	PS C:\> Find-AzureArtifactModule -Name YourModule -Repository YourAzureArtifactsRepositoryName
+
+	This command will attempt to use the 'YourAzureArtifactsRepositoryName' PSRepository to search for the 'YourModule" module and list its details.
+.INPUTS
+	This function simply proxies to the Find-Module cmdlet.
+	View the Find-Module cmdlet input parameters at: https://docs.microsoft.com/en-us/powershell/module/powershellget/find-module#parameters
+.OUTPUTS
+	This function simply proxies to the Find-Module cmdlet.
+	View the Find-Module cmdlet outputs at: https://docs.microsoft.com/en-us/powershell/module/powershellget/find-module#outputs
+.NOTES
+	If a Credential is not provided, it will attempt create one by retrieving a Personal Access Token (PAT) from the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables.
+#>
 function Find-AzureArtifactsModule
 {
 	# Entire Param section was copy-pasted from the Find-Module function: https://github.com/PowerShell/PowerShellGet/blob/development/src/PowerShellGet/public/psgetfunctions/Find-Module.ps1
@@ -570,6 +592,28 @@ function Find-AzureArtifactsModule
 	Find-Module @parametersWithCredentials
 }
 
+<#
+.SYNOPSIS
+	A proxy function to Install-Module that first tries to dynamically obtain a Credential if one was not provided.
+.DESCRIPTION
+	A proxy function to Install-Module that first tries to dynamically obtain a Credential if one was not provided.
+
+	If a Credential is not provided, it will attempt create one by retrieving a Personal Access Token (PAT) from the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables.
+
+	The Install-Module help can be viewed at: https://docs.microsoft.com/en-us/powershell/module/powershellget/install-module
+.EXAMPLE
+	PS C:\> Install-AzureArtifactModule -Name YourModule -Repository YourAzureArtifactsRepositoryName
+
+	This command will attempt to use the 'YourAzureArtifactsRepositoryName' PSRepository to download and install 'YourModule".
+.INPUTS
+	This function simply proxies to the Install-Module cmdlet.
+	View the Install-Module cmdlet input parameters at: https://docs.microsoft.com/en-us/powershell/module/powershellget/install-module#parameters
+.OUTPUTS
+	This function simply proxies to the Install-Module cmdlet.
+	View the Install-Module cmdlet outputs at: https://docs.microsoft.com/en-us/powershell/module/powershellget/install-module#outputs
+.NOTES
+	If a Credential is not provided, it will attempt create one by retrieving a Personal Access Token (PAT) from the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables.
+#>
 function Install-AzureArtifactsModule
 {
 	# Entire Param section was copy-pasted from the Install-Module function: https://github.com/PowerShell/PowerShellGet/blob/development/src/PowerShellGet/public/psgetfunctions/Install-Module.ps1
