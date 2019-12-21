@@ -81,7 +81,7 @@ All of the cmdlets take an optional `-Credential` parameter. When not provided, 
 The `Install-AzureArtifactsModule` is essentially just a proxy to the native [`Install-Module` cmdlet][MicrosoftInstallModuleDocumentationUrl], and `Find-AzureArtifactsModule` to the native [`Find-Module` cmdlet][MicrosoftFindModuleDocumentationUrl], that tries to dynamically create a Credential if one was not provided.
 This means that all of the parameters work the exact same way as the native Install-Module and Find-Module cmdlets.
 
-#### Registering your Azure Artifacts provider
+#### Register-AzureArtifactsPSRepository
 
 Before you can interact with your Azure Artifacts feed, you will need to register it using the `Register-AzureArtifactsPSRepository` cmdlet:
 
@@ -106,7 +106,7 @@ To get more details on what happens during this process, you can use the Informa
 [string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $feedUrl -InformationAction Continue
 ```
 
-#### Installing a module from your Azure Artifacts
+#### Install-AzureArtifactsModule
 
 Now that you have your Azure Artifacts feed registered, you can install modules from it by using the `Install-AzureArtifactsModule` module:
 
@@ -134,7 +134,7 @@ If you want to install a prerelease version, you must also provide the `AllowPre
 Install-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -RequiredVersion '1.2.3-beta1' -AllowPrerelease -Repository $repository
 ```
 
-#### Find a module in your Azure Artifacts
+#### Find-AzureArtifactsModule
 
 After registering your Azure Artifacts, you can find modules in it by using the `Find-AzureArtifactsModule` cmdlet:
 
