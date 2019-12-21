@@ -9,18 +9,19 @@ One main benefit of this package is not having to provide credentials for every 
 The first step is to install this module, which can be done with the PowerShell command:
 
 ```powershell
-Install-Module -Name AzureArtifactsPowerShellModuleHelper -Scope CurrentUser -Force -MaximumVersion 1.9999
+Install-Module -Name AzureArtifactsPowerShellModuleHelper -Scope CurrentUser -Force -MaximumVersion 2.9999
 ```
 
-`-Scope CurrentUser` is used so that admin permissions are not required, `-Force` is used to suppress any user prompts, and `-MaximumVersion 1.9999` is used to ensure scripts using this module continue to work if a breaking change is introduced and the major version is incremented.
+`-Scope CurrentUser` is used so that admin permissions are not required, `-Force` is used to suppress any user prompts, and `-MaximumVersion 2.9999` is used to ensure scripts using this module continue to work if a breaking change is introduced and the major version is incremented.
+Feel free to omit these parameters if needed, but they are recommended if you are using this in an automated script that won't have human intervention.
 
-Assuming you already have [an environment variable with your PAT setup][MicrosoftCredentialProviderEnvironmentVariableDocumentationUrl], you can import your Azure Artifact modules using:
+Assuming you already have [an environment variable with your PAT setup][MicrosoftCredentialProviderEnvironmentVariableDocumentationUrl], you can install your Azure Artifact modules using:
 
 ```powershell
-Install-Module -Name AzureArtifactsPowerShellModuleHelper -Scope CurrentUser -Force -MaximumVersion 1.9999
+Install-Module -Name AzureArtifactsPowerShellModuleHelper -Scope CurrentUser -Force -MaximumVersion 2.9999
 'https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2' |
-    Register-AzureArtifactsPSRepository |
-    Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed'
+    Register-AzureArtifactsPSRepository
+Install-AzureArtifactsModule -Name 'ModuleNameInYourFeed'
 ```
 
 For more information, continue reading.
@@ -42,13 +43,46 @@ Optionally, you can also follow [Microsoft's documentation][MicrosoftCredentialP
 Setting up the environment variable is not a requirement, but it will allow you to avoid creating and passing in the `Credential` parameter to all of the cmdlets in this module.
 This is because by default the module will check if the `VSS_NUGET_EXTERNAL_FEED_ENDPOINTS` environment variable is present and extract your PAT from it.
 
-### Registering your Azure Artifacts provider
+#### Explicitly using your Personal Access Token
+
+If you do not have the environment variable set, or do not want to use it, all of the cmdlets allow you to provide a `Credential` parameter.
+
+You can provide a Credential object like this:
+
+```powershell
+[System.Security.SecureString] $securePersonalAccessToken = 'YourPatGoesHere' | ConvertTo-SecureString -AsPlainText -Force
+[PSCredential] $Credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $securePersonalAccessToken
+[string] $feedUrl = 'https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2'
+[string] $repository = Register-AzureArtifactsPSRepository -Credential $credential -FeedUrl $feedUrl
+```
+
+If a Credential is provided, it will be used instead of any value stored in the `VSS_NUGET_EXTERNAL_FEED_ENDPOINTS` environment variable.
+
+__NOTE:__ You should avoid committing your Personal Access Token to source control and instead retrieve it from a secure repository, like Azure KeyVault.
+
+### Cmdlets provided by the module
+
+The cmdlets provided by this module are:
+
+- `Register-AzureArtifactsPSRepository`
+- `Install-AzureArtifactsModule`
+- `Find-AzureArtifactsModule`
+
+`Register-AzureArtifactsPSRepository` returns the name of the repository for the Azure Artifacts feed, which can be provided to the other cmdlets via the `-Repository` parameter.
+Providing the `-Repository` parameter to those cmdlets is optional, but it can increase performance by not having to scan through other registered repositories, and can avoid unnecessary warnings if any of those other repositories require different authentication that is not being provided.
+
+All of the cmdlets take an optional `-Credential` parameter. When not provided, one will attempt to be created by using the PAT stored in an environment variable.
+
+The `Install-AzureArtifactsModule` is essentially just a proxy to the native [`Install-Module` cmdlet][MicrosoftInstallModuleDocumentationUrl], and `Find-AzureArtifactsModule` to the native [`Find-Module` cmdlet][MicrosoftFindModuleDocumentationUrl], that tries to dynamically create a Credential if one was not provided.
+This means that all of the parameters work the exact same way as the native Install-Module and Find-Module cmdlets.
+
+#### Registering your Azure Artifacts provider
 
 Before you can interact with your Azure Artifacts feed, you will need to register it using the `Register-AzureArtifactsPSRepository` cmdlet:
 
 ```powershell
 [string] $feedUrl = 'https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2'
-[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $feedUrl
+[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $feedUrl
 ```
 
 __Important:__ When retrieving your feed's URL from Azure DevOps, it will often specify a `/v3` endpoint.
@@ -59,71 +93,63 @@ Save this in a variable, as you will need to use this when interacting with othe
 
 If you already have a PSRepository setup for your feed then you can potentially skip calling this cmdlet, although it isn't recommended as this cmdlet also makes sure some other requirements are installed, such as the NuGet Package Provider and the minimum required version of PowerShellGet.
 
-You can confirm that your Azure Artifacts feed was registered by running the PowerShell command `Get-PSRepository`, and can remove it if needed using the command `Unregister-PSRepository -Name $repositoryName`.
+You can confirm that your Azure Artifacts feed was registered by running the PowerShell command `Get-PSRepository`, and can remove it if needed using the command `Unregister-PSRepository -Name $repository`.
 
 To get more details on what happens during this process, you can use the Information stream:
 
 ```powershell
-[string] $repositoryName = Register-AzureArtifactsPSRepository -FeedUrl $feedUrl -InformationAction Continue
+[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $feedUrl -InformationAction Continue
 ```
 
-### Explicitly using your Personal Access Token
+#### Installing a module from your Azure Artifacts
 
-If you do not have the environment variable set, or do not want to use it, all of the cmdlets allow you to provide a `Credential` parameter.
-
-You can provide a Credential object like this:
+Now that you have your Azure Artifacts feed registered, you can install modules from it by using the `Install-AzureArtifactsModule` module:
 
 ```powershell
-[System.Security.SecureString] $securePersonalAccessToken = 'YourPatGoesHere' | ConvertTo-SecureString -AsPlainText -Force
-[System.Management.Automation.PSCredential] $Credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $securePersonalAccessToken
-[string] $feedUrl = 'https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2'
-[string] $repositoryName = Register-AzureArtifactsPSRepository -Credential $credential -FeedUrl $feedUrl
+Install-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Repository $repository
 ```
 
-If a Credential is provided, it will be used instead of any value stored in the `VSS_NUGET_EXTERNAL_FEED_ENDPOINTS` environment variable.
+The `Install-AzureArtifactsModule` takes all the same parameters as the native [`Install-Module` cmdlet][MicrosoftInstallModuleDocumentationUrl].
 
-__NOTE:__ You should avoid committing your Personal Access Token to source control and instead retrieve it from a secure repository, like Azure KeyVault.
+##### Installing a specific version
 
-### Importing a module from your Azure Artifacts
-
-Now that you have your Azure Artifacts feed registered, you can import it by using the `Import-AzureArtifactsModule` module:
+You can install a specific module version by using the `RequiredVersion` parameter:
 
 ```powershell
-Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -RepositoryName $repositoryName
+Install-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -RequiredVersion '1.2.3' -Repository $repository
 ```
 
-The `$repositoryName` is the value that was returned from the `Register-AzureArtifactsPSRepository` cmdlet above.
+You can also use the typical `MinimumVersion` and `MaximumVersion` parameters as usual.
 
-The module will be installed if necessary, and then imported.
+##### Installing a prerelease version
 
-To get more details on what version was installed and imported, you can use the Information stream:
+If you want to install a prerelease version, you must also provide the `AllowPrerelease` parameter:
 
 ```powershell
-Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -RepositoryName $repositoryName -InformationAction Continue
+Install-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -RequiredVersion '1.2.3-beta1' -AllowPrerelease -Repository $repository
 ```
 
-#### Importing a specific version
+#### Find a module in your Azure Artifacts
 
-You can import a specific module version by using the `Version` parameter:
+After registering your Azure Artifacts, you can find modules in it by using the `Find-AzureArtifactsModule` cmdlet:
 
 ```powershell
-Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Version '1.2.3' -RepositoryName $repositoryName
+Install-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Repository $repository
 ```
 
-#### Importing a prerelease version
+The `Find-AzureArtifactsModule` takes all the same parameters as the native [`Find-Module` cmdlet][MicrosoftFindModuleDocumentationUrl].
 
-If you want to install and import a prerelease version, you must also provide the `AllowPrerelease` parameter:
+##### Finding a specific version
 
-```powershell
-Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Version '1.2.3-beta1' -AllowPrerelease -RepositoryName $repositoryName
-````
-
-#### Force a download and reinstall
-
-Use the `Force` parameter to force a module to be downloaded and installed, even if it already exists on the computer:
+You can find a specific module version by using the `RequiredVersion` parameter:
 
 ```powershell
-Import-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Force -RepositoryName $repositoryName
+Find-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -RequiredVersion '1.2.3' -Repository $repository
 ```
 
+You can also use the typical `MinimumVersion` and `MaximumVersion` parameters as usual.
+
+<!-- Links used multiple times -->
 [MicrosoftCredentialProviderEnvironmentVariableDocumentationUrl]: https://github.com/Microsoft/artifacts-credprovider#environment-variables
+[MicrosoftInstallModuleDocumentationUrl]: https://docs.microsoft.com/en-us/powershell/module/powershellget/install-module
+[MicrosoftFindModuleDocumentationUrl]: https://docs.microsoft.com/en-us/powershell/module/powershellget/find-module
