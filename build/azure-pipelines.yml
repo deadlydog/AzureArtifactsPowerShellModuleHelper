@@ -10,10 +10,12 @@ pool:
   vmImage: 'windows-latest'
 
 # Only the name (i.e. Build.BuildNumber) can use "Rev:r", so use it for our version number.
-name: '2.0.$(Rev:r)'
+name: '$(SourceBranchName)_$(versionNumber)'
 
 variables:
-  versionNumber: '$(Build.BuildNumber)'
+  version.MajorMinor: 2.0 # Manually adjust the version number as needed for semantic versioning.
+  version.Revision: $[counter(variables['version.MajorMinor'], 0)]
+  versionNumber: '$(version.MajorMinor).$(version.Revision)'
   prereleaseVersionNumber: 'Set dynamically below in a task'
   moduleName: AzureArtifactsPowerShellModuleHelper
   moduleDirectoryPath: '$(System.DefaultWorkingDirectory)\src\$(moduleName)'
