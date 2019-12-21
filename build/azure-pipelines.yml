@@ -27,8 +27,7 @@ steps:
   inputs:
     targetType: 'inline'
     script: |
-      [string] $dateTime = (Get-Date -Format 'yyyy-MM-dd-THH-mm-ss')
-      [string] $buildName = "$(versionNumber)_$(Build.SourceBranchName)_$dateTime"
+      [string] $buildName = "$(versionNumber)_$(Build.SourceBranchName)"
       Write-Host "Setting the name of the build to '$buildName'."
       Write-Host "##vso[build.updatebuildnumber]$buildName"
 
