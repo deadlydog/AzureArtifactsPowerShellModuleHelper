@@ -372,6 +372,9 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 # }
 
 Describe 'Installing a PowerShell module from Azure Artifacts' {
+	Context 'When relying on retrieving the Azure Artifacts PAT from the environment variable that exists' {
+		Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
+
 	It 'Should install the module properly' {
 		# Arrange.
 		[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
@@ -383,9 +386,12 @@ Describe 'Installing a PowerShell module from Azure Artifacts' {
 		Get-Module -Name $PowerShellModuleName -ListAvailable | Should -Not -BeNullOrEmpty
 	}
 }
+}
 
 Describe 'Finding a PowerShell module from Azure Artifacts' {
 	Context 'When relying on retrieving the Azure Artifacts PAT from the environment variable that exists' {
+		Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
+
 		It 'Should find the module properly' {
 			# Arrange.
 			[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
