@@ -71,7 +71,7 @@ function Register-AzureArtifactsPSRepository
 		$Credential = Get-AzureArtifactsCredential -credential $Credential
 
 		Install-NuGetPackageProvider -scope $Scope
-		Install-PowerShellGet -scope $Scope
+		Install-AndImportPowerShellGet -scope $Scope
 
 		[string] $repositoryNameOfFeed = Register-AzureArtifactsPowerShellRepository -feedUrl $FeedUrl -Repository $Repository -credential $Credential
 
@@ -134,22 +134,40 @@ function Register-AzureArtifactsPSRepository
 			[string] $computerName = $Env:ComputerName
 			[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 
-			$nuGetPackageProviderModule = Get-PackageProvider | Where-Object { $_.Name -ieq 'NuGet' }
+			[System.Version] $minimumRequiredNuGetPackageProviderVersion = '2.8.5.208'
+			[bool] $nuGetPackageProviderVersionIsHighEnough = Test-CurrentlyInstalledNuGetPackageProviderVersionIsHighEnough -minimumRequiredVersion $minimumRequiredNuGetPackageProviderVersion
 
-			[bool] $nuGetPackageProviderIsNotInstalled = ($null -eq $nuGetPackageProviderModule)
-			if ($nuGetPackageProviderIsNotInstalled)
+			if (!$nuGetPackageProviderVersionIsHighEnough)
 			{
 				Write-Information "Installing NuGet package provider for user '$currentUser' to scope '$scope' on computer '$computerName'."
-				Install-PackageProvider NuGet -Scope $scope -Force > $null
-			}
-			else
-			{
-				$installedVersion = $nuGetPackageProviderModule.Version
-				Write-Information "Skipping installing the NuGet Package Provider, as version '$installedVersion' is already installed on computer '$computerName'."
+				Install-PackageProvider -Name NuGet -Scope $scope -Force -MinimumVersion $minimumRequiredNuGetPackageProviderVersion > $null
 			}
 		}
 
-		function Install-PowerShellGet([string] $scope)
+		function Test-CurrentlyInstalledNuGetPackageProviderVersionIsHighEnough([System.Version] $minimumRequiredVersion)
+		{
+			$nuGetPackageProviderModule =
+				Get-PackageProvider |
+				Where-Object { $_.Name -ieq 'NuGet' } # Use Where instead of -Name to avoid error when it is not installed.
+
+			if ($null -eq $nuGetPackageProviderModule)
+			{
+				Write-Information "The NuGet package provider is not installed."
+				return $false
+			}
+
+			[System.Version] $installedVersion = $nuGetPackageProviderModule.Version
+			if ($installedVersion -lt $minimumRequiredVersion)
+			{
+				Write-Information "The installed version '$installedVersion' of the NuGet Package Provider does not satisfy the minimum required version of '$minimumRequiredVersion'."
+				return $false
+			}
+
+			Write-Information "The installed version '$installedVersion' of the NuGet Package Provider satisfies the minimum required version of '$minimumRequiredVersion'."
+			return $true
+		}
+
+		function Install-AndImportPowerShellGet([string] $scope)
 		{
 			[string] $computerName = $Env:ComputerName
 			[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
