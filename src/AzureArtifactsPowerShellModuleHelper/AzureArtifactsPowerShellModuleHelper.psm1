@@ -134,7 +134,7 @@ function Register-AzureArtifactsPSRepository
 			[string] $computerName = $Env:ComputerName
 			[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 
-			[System.Version] $minimumRequiredNuGetPackageProviderVersion = '2.8.5.208'
+			[System.Version] $minimumRequiredNuGetPackageProviderVersion = '2.8.5.208' # Minimum version required to install NuGet packages.
 			[bool] $nuGetPackageProviderVersionIsHighEnough = Test-CurrentlyInstalledNuGetPackageProviderVersionIsHighEnough -minimumRequiredVersion $minimumRequiredNuGetPackageProviderVersion
 
 			if (!$nuGetPackageProviderVersionIsHighEnough)
