@@ -101,7 +101,8 @@ Notice that the cmdlet returns back a Repository name; you may want to save it i
 The repository name can be provided to the other cmdlets via their `-Repository` parameter.
 Providing the `-Repository` parameter to those cmdlets is optional, but it can increase performance by not having to scan through other registered repositories, and it can avoid unnecessary warnings if any of those other repositories require different authentication that is not being provided.
 
-If you already have a PSRepository setup for your feed then you can potentially skip calling this cmdlet.
+If the PSRepository already exists, this cmdlet will simply return back the name of the existing PSRepository for the provided feed.
+If you already have a PSRepository setup for your feed and don't want to get the repository name, then you can potentially skip calling this cmdlet.
 If this is being used in an automated script however, it's recommended to include it.
 
 You can confirm that your Azure Artifacts feed was registered by running the PowerShell command `Get-PSRepository`, and can remove it if needed using the command `Unregister-PSRepository -Name $repository`.
