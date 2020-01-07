@@ -728,6 +728,91 @@ function Install-AzureArtifactsModule
 	Install-Module @parametersWithCredentials
 }
 
+<#
+.SYNOPSIS
+	A proxy function to Update-Module that first tries to dynamically obtain a Credential if one was not provided.
+.DESCRIPTION
+	A proxy function to Update-Module that first tries to dynamically obtain a Credential if one was not provided.
+
+	If a Credential is not provided, it will attempt create one by retrieving a Personal Access Token (PAT) from the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables.
+
+	The Update-Module help can be viewed at: https://docs.microsoft.com/en-us/powershell/module/powershellget/update-module
+.EXAMPLE
+	PS C:\> Update-AzureArtifactModule -Name YourModule -Repository YourAzureArtifactsRepositoryName
+
+	This command will attempt to use the 'YourAzureArtifactsRepositoryName' PSRepository to download and update 'YourModule".
+.INPUTS
+	This function simply proxies to the Update-Module cmdlet.
+	View the Update-Module cmdlet input parameters at: https://docs.microsoft.com/en-us/powershell/module/powershellget/update-module#parameters
+.OUTPUTS
+	This function simply proxies to the Update-Module cmdlet.
+	View the Update-Module cmdlet outputs at: https://docs.microsoft.com/en-us/powershell/module/powershellget/update-module#outputs
+.NOTES
+	If a Credential is not provided, it will attempt create one by retrieving a Personal Access Token (PAT) from the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables.
+#>
+function Update-AzureArtifactsModule
+{
+	# Entire Param section was copy-pasted from the Update-Module function: https://github.com/PowerShell/PowerShellGet/blob/development/src/PowerShellGet/public/psgetfunctions/Update-Module.ps1
+	# This was done so that we can easily splat this function to the Update-Module function, while providing the same intellisense experience.
+	[CmdletBinding(SupportsShouldProcess = $true,
+		HelpUri = 'https://go.microsoft.com/fwlink/?LinkID=398576')]
+	Param
+	(
+		[Parameter(ValueFromPipelineByPropertyName = $true,
+			Position = 0)]
+		[ValidateNotNullOrEmpty()]
+		[String[]]
+		$Name,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[ValidateNotNull()]
+		[string]
+		$RequiredVersion,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[ValidateNotNull()]
+		[string]
+		$MaximumVersion,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[PSCredential]
+		$Credential,
+
+		[Parameter()]
+		[ValidateSet("CurrentUser", "AllUsers")]
+		[string]
+		$Scope,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[ValidateNotNullOrEmpty()]
+		[Uri]
+		$Proxy,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[PSCredential]
+		$ProxyCredential,
+
+		[Parameter()]
+		[Switch]
+		$Force,
+
+		[Parameter()]
+		[Switch]
+		$AllowPrerelease,
+
+		[Parameter()]
+		[switch]
+		$AcceptLicense,
+
+		[Parameter()]
+		[switch]
+		$PassThru
+	)
+
+	[hashtable] $parametersWithCredentials = Get-PsBoundParametersWithCredential -parameters $PSBoundParameters
+	Update-Module @parametersWithCredentials
+}
+
 function Get-PsBoundParametersWithCredential([hashtable] $parameters)
 {
 	[PSCredential] $credential = Get-AzureArtifactsCredential -credential $parameters.Credential
@@ -792,3 +877,4 @@ function Get-SecurePersonalAccessTokenFromEnvironmentVariable
 Export-ModuleMember -Function Find-AzureArtifactsModule
 Export-ModuleMember -Function Install-AzureArtifactsModule
 Export-ModuleMember -Function Register-AzureArtifactsPSRepository
+Export-ModuleMember -Function Update-AzureArtifactsModule

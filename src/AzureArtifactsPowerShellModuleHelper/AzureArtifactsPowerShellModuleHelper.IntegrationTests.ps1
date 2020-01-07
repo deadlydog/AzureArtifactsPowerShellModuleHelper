@@ -23,7 +23,7 @@ Import-Module -Name $moduleFilePathToTest -Force
 # [string] $FeedUrl = 'https://pkgs.dev.azure.com/Organization/_packaging/Feed/nuget/v2'
 [string] $FeedUrl = 'https://pkgs.dev.azure.com/iqmetrix/_packaging/iqmetrix/nuget/v2'
 [string] $PowerShellModuleName = 'IQ.DataCenter.ServerConfiguration'
-[string] $ValidModuleVersionThatExists = '1.0.40'
+[string] $ValidOlderModuleVersionThatExists = '1.0.40'
 [string] $InvalidModuleVersionThatDoesNotExist = '1.0.99999'
 [string] $ValidModulePrereleaseVersionThatExists = '1.0.66-ci20191121T214736'
 [System.Security.SecureString] $SecurePersonalAccessToken = ($AzureArtifactsPersonalAccessToken | ConvertTo-SecureString -AsPlainText -Force)
@@ -228,14 +228,14 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 # 	It 'Should import the module properly when a specific version is requested' {
 # 		# Arrange.
 # 		[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
-# 		[ScriptBlock] $action = { Import-AzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -Version $ValidModuleVersionThatExists }
+# 		[ScriptBlock] $action = { Import-AzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -Version $ValidOlderModuleVersionThatExists }
 # 		Remove-PowerShellModule -powerShellModuleName $PowerShellModuleName
 
 # 		# Act and Assert.
 # 		$action | Should -Not -Throw
 # 		$module = Get-Module -Name $PowerShellModuleName
 # 		$module | Should -Not -BeNullOrEmpty
-# 		$module.Version | Should -Be $ValidModuleVersionThatExists
+# 		$module.Version | Should -Be $ValidOlderModuleVersionThatExists
 # 	}
 
 # 	# Could not get this one to work, as it complains that the module is in use so it's not able to uninstall it to do a proper test.
@@ -371,23 +371,6 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 # 	}
 # }
 
-Describe 'Installing a PowerShell module from Azure Artifacts' {
-	Context 'When relying on retrieving the Azure Artifacts PAT from the environment variable that exists' {
-		Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
-
-	It 'Should install the module properly' {
-		# Arrange.
-		[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
-		[ScriptBlock] $action = { Install-AzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -Force -ErrorAction Stop }
-		Uninstall-PowerShellModule -powerShellModuleName $PowerShellModuleName
-
-		# Act and Assert.
-		$action | Should -Not -Throw
-		Get-Module -Name $PowerShellModuleName -ListAvailable | Should -Not -BeNullOrEmpty
-	}
-}
-}
-
 Describe 'Finding a PowerShell module from Azure Artifacts' {
 	Context 'When relying on retrieving the Azure Artifacts PAT from the environment variable that exists' {
 		Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
@@ -424,5 +407,42 @@ Describe 'Finding a PowerShell module from Azure Artifacts' {
 
 		# Act and Assert.
 		$action | Should -Throw "No match was found for the specified search criteria and module name"
+	}
+}
+
+Describe 'Installing a PowerShell module from Azure Artifacts' {
+	Context 'When relying on retrieving the Azure Artifacts PAT from the environment variable that exists' {
+		Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
+
+		It 'Should install the module properly' {
+			# Arrange.
+			[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
+			[ScriptBlock] $action = { Install-AzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -Force -ErrorAction Stop }
+			Uninstall-PowerShellModule -powerShellModuleName $PowerShellModuleName -ErrorAction 'SilentlyContinue'
+
+			# Act and Assert.
+			$action | Should -Not -Throw
+			Get-Module -Name $PowerShellModuleName -ListAvailable | Should -Not -BeNullOrEmpty
+		}
+	}
+}
+
+Describe 'Updating a PowerShell module from Azure Artifacts' {
+	Context 'When relying on retrieving the Azure Artifacts PAT from the environment variable that exists' {
+		Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
+
+		It 'Should update the module properly resulting in 2 versions being installed' {
+			# Arrange.
+			[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
+			[ScriptBlock] $action = { Update-AzureArtifactsModule -Name $PowerShellModuleName -Force -ErrorAction Stop }
+			Uninstall-PowerShellModule -powerShellModuleName $PowerShellModuleName -ErrorAction 'SilentlyContinue'
+			Install-AzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -RequiredVersion $ValidOlderModuleVersionThatExists
+
+			# Act and Assert.
+			$action | Should -Not -Throw
+			$modulesInstalled = Get-Module -Name $PowerShellModuleName -ListAvailable
+			$modulesInstalled | Should -Not -BeNullOrEmpty
+			$modulesInstalled.Count | Should -BeGreaterThan 1
+		}
 	}
 }
