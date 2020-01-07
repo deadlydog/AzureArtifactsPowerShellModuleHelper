@@ -25,13 +25,13 @@
 	```
 	Attempts to create a PSRepository to the given FeedUrl if one doesn't exist, using the Credential provided.
 .INPUTS
-	FeedUrl: (Required) The URL of the Azure Artifacts PowerShell feed to register. e.g. https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2. Note: PowerShell does not yet support the "/v3" endpoint, so use v2.
+	[string] FeedUrl: (Required) The URL of the Azure Artifacts PowerShell feed to register. e.g. https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2. Note: PowerShell does not yet support the "/v3" endpoint, so use v2.
 
-	Repository: The name to use for the PSRepository if one must be created. If not provided, one will be generated. A PSRepository with the given name will only be created if one to the Feed URL does not already exist.
+	[string] Repository: The name to use for the PSRepository if one must be created. If not provided, one will be generated. A PSRepository with the given name will only be created if one to the Feed URL does not already exist.
 
-	Credential: The credential to use to connect to the Azure Artifacts feed. This should be created from a personal access token that has at least Read permissions to the Azure Artifacts feed. If not provided, the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable will be checked, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables.
+	[PSCredential] Credential: The credential to use to connect to the Azure Artifacts feed. This should be created from a personal access token that has at least Read permissions to the Azure Artifacts feed. If not provided, the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable will be checked, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables.
 
-	Scope: If the NuGet Package Provider or PowerShellGet module needs to be installed, this is the scope it will be installed in. Allowed values are "AllUsers" and "CurrentUser". Default is "CurrentUser".
+	[string] Scope: If the NuGet Package Provider or PowerShellGet module needs to be installed, this is the scope it will be installed in. Allowed values are "AllUsers" and "CurrentUser". Default is "CurrentUser".
 .OUTPUTS
 	System.String
 	Returns the Name of the PSRepository that can be used to connect to the given Feed URL.
@@ -813,6 +813,90 @@ function Update-AzureArtifactsModule
 	Update-Module @parametersWithCredentials
 }
 
+<#
+.SYNOPSIS
+	Installs and updates a module if needed by calling the Install-AzureArtifactsModule and Update-AzureArtifactsModule cmdlets.
+.DESCRIPTION
+	Installs and updates a module if needed by calling the Install-AzureArtifactsModule and Update-AzureArtifactsModule cmdlets.
+	This is purely a convenience cmdlet so that you can install and/or update your modules in a single line of code instead of two.
+.EXAMPLE
+	```
+	Install-AndUpdateAzureArtifactsModule -Name 'ModuleNameInYourFeed' -Repository $repository
+	```
+	Installs the latest version of ModuleNameInYourFeed if it is not already installed.
+	If the module is already installed, it will be updated to the latest version.
+.INPUTS
+	This function simply proxies to the Install-AzureArtifactsModule and Update-AzureArtifactsModule cmdlets, so it accepts parameters common to those cmdlets and which make sense. These include:
+
+	[string[]] Name
+	[string[]] Repository,
+	[string] MaximumVersion,
+	[PSCredential] Credential,
+	[string] Scope,
+	[Uri] Proxy,
+	[PSCredential] ProxyCredential,
+	[switch] Force,
+	[switch] AllowPrerelease,
+	[switch] AcceptLicense
+
+.OUTPUTS
+	This function simply proxies to the Install-AzureArtifactsModule and Update-AzureArtifactsModule cmdlets, so it will return any outputs that they return (typically none).
+.NOTES
+	If a Credential is not provided, it will attempt create one by retrieving a Personal Access Token (PAT) from the VSS_NUGET_EXTERNAL_FEED_ENDPOINTS environment variable, as per https://github.com/Microsoft/artifacts-credprovider#environment-variables.
+#>
+function Install-AndUpdateAzureArtifactsModule
+{
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory = $true,
+			ValueFromPipelineByPropertyName = $true,
+			Position = 0)]
+		[ValidateNotNullOrEmpty()]
+		[string[]] $Name,
+
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string[]] $Repository,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[ValidateNotNull()]
+		[string] $MaximumVersion,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[PSCredential] $Credential,
+
+		[Parameter()]
+		[ValidateSet("CurrentUser", "AllUsers")]
+		[string] $Scope,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[ValidateNotNullOrEmpty()]
+		[Uri] $Proxy,
+
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[PSCredential] $ProxyCredential,
+
+		[Parameter()]
+		[switch] $Force,
+
+		[Parameter()]
+		[switch] $AllowPrerelease,
+
+		[Parameter()]
+		[switch] $AcceptLicense
+	)
+
+	[hashtable] $parametersWithCredentials = Get-PsBoundParametersWithCredential -parameters $PSBoundParameters
+	Install-AzureArtifactsModule @parametersWithCredentials
+
+	if ($null -ne $parametersWithCredentials.Repository)
+	{
+		$parametersWithCredentials.Remove('Repository')
+	}
+	Update-AzureArtifactsModule @parametersWithCredentials
+}
+
 function Get-PsBoundParametersWithCredential([hashtable] $parameters)
 {
 	[PSCredential] $credential = Get-AzureArtifactsCredential -credential $parameters.Credential
@@ -876,5 +960,6 @@ function Get-SecurePersonalAccessTokenFromEnvironmentVariable
 
 Export-ModuleMember -Function Find-AzureArtifactsModule
 Export-ModuleMember -Function Install-AzureArtifactsModule
+Export-ModuleMember -Function Install-AndUpdateAzureArtifactsModule
 Export-ModuleMember -Function Register-AzureArtifactsPSRepository
 Export-ModuleMember -Function Update-AzureArtifactsModule

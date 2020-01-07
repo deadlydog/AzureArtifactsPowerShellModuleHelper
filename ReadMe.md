@@ -75,6 +75,7 @@ The cmdlets provided by this module are:
 - `Find-AzureArtifactsModule` (Proxy to [Find-Module][MicrosoftFindModuleDocumentationUrl])
 - `Install-AzureArtifactsModule` (Proxy to [Install-Module][MicrosoftInstallModuleDocumentationUrl])
 - `Update-AzureArtifactsModule` (Proxy to [Update-Module][MicrosoftUpdateModuleDocumentationUrl])
+- `Install-AndUpdateAzureArtifactsModule`
 
 All of the cmdlets take an optional `-Credential` parameter.
 When not provided, one will attempt to be created by using the PAT stored in the environment variable if available.
@@ -131,7 +132,7 @@ Find-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -RequiredVersion '1.2.3' 
 
 ### `Install-AzureArtifactsModule` cmdlet
 
-After registering your Azure Artifacts repository, you can install modules from it by using the `Install-AzureArtifactsModule` module:
+After registering your Azure Artifacts repository, you can install modules from it by using the `Install-AzureArtifactsModule` cmdlet:
 
 ```powershell
 Install-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Repository $repository
@@ -153,11 +154,33 @@ Install-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -RequiredVersion '1.2.
 
 ### `Update-AzureArtifactsModule` cmdlet
 
-After installing one of the modules, you can update it by using the `Update-AzureArtifactsModule` module:
+After installing one of the modules, you can update it by using the `Update-AzureArtifactsModule` cmdlet:
 
 ```powershell
 Update-AzureArtifactsModule -Name 'ModuleNameInYourFeed'
 ```
+
+### `Install-AndUpdateAzureArtifactsModule` cmdlet
+
+After registering your Azure Artifacts repository, you can install and update your modules by using the `Install-AndUpdateAzureArtifactsModule` cmdlet:
+
+```powershell
+Install-AndUpdateAzureArtifactsModule -Name 'ModuleNameInYourFeed' -Repository $repository
+```
+
+This cmdlet is a convenience cmdlet that allows you to install and/or update a cmdlet in one line instead of two.
+The above command is the equivalent of:
+
+```powershell
+Install-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Repository $repository
+Update-AzureArtifactsModule -Name 'ModuleNameInYourFeed'
+```
+
+This cmdlet does not take as many parameters as the `Install-AzureArtifactsModule` and `Update-AzureArtifactsModule` cmdlets since not all of them make sense.
+For example, it does not provide a `RequiredVersion` parameter because it would not make sense to call both cmdlets using the same `RequiredVersion`.
+It also does not provide a `MinimumVersion` parameter because that cannot be used with `Update-AzureArtifactsModule`.
+
+An alternative to this cmdlet would be to use the `Force` parameter with `Install-AzureArtifactsModule`, however that has the downside of downloading and installing the module every time it's called, even if the same version is already installed.
 
 <!-- Links used multiple times -->
 [MicrosoftCredentialProviderEnvironmentVariableDocumentationUrl]: https://github.com/Microsoft/artifacts-credprovider#environment-variables

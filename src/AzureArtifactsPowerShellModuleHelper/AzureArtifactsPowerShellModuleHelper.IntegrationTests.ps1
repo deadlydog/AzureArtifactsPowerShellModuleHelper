@@ -431,10 +431,41 @@ Describe 'Updating a PowerShell module from Azure Artifacts' {
 	Context 'When relying on retrieving the Azure Artifacts PAT from the environment variable that exists' {
 		Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
 
-		It 'Should update the module properly resulting in 2 versions being installed' {
+		It 'Should update the module properly when already installed, resulting in 2 versions being installed' {
 			# Arrange.
 			[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
 			[ScriptBlock] $action = { Update-AzureArtifactsModule -Name $PowerShellModuleName -Force -ErrorAction Stop }
+			Uninstall-PowerShellModule -powerShellModuleName $PowerShellModuleName -ErrorAction 'SilentlyContinue'
+			Install-AzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -RequiredVersion $ValidOlderModuleVersionThatExists
+
+			# Act and Assert.
+			$action | Should -Not -Throw
+			$modulesInstalled = Get-Module -Name $PowerShellModuleName -ListAvailable
+			$modulesInstalled | Should -Not -BeNullOrEmpty
+			$modulesInstalled.Count | Should -BeGreaterThan 1
+		}
+	}
+}
+
+Describe 'Installing-and-Updating a PowerShell module from Azure Artifacts' {
+	Context 'When relying on retrieving the Azure Artifacts PAT from the environment variable that exists' {
+		Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
+
+		It 'Should install the module properly' {
+			# Arrange.
+			[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
+			[ScriptBlock] $action = { Install-AndUpdateAzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -Force -ErrorAction Stop }
+			Uninstall-PowerShellModule -powerShellModuleName $PowerShellModuleName -ErrorAction 'SilentlyContinue'
+
+			# Act and Assert.
+			$action | Should -Not -Throw
+			Get-Module -Name $PowerShellModuleName -ListAvailable | Should -Not -BeNullOrEmpty
+		}
+
+		It 'Should update the module properly when already installed, resulting in 2 versions being installed' {
+			# Arrange.
+			[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
+			[ScriptBlock] $action = { Install-AndUpdateAzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -Force -ErrorAction Stop }
 			Uninstall-PowerShellModule -powerShellModuleName $PowerShellModuleName -ErrorAction 'SilentlyContinue'
 			Install-AzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -RequiredVersion $ValidOlderModuleVersionThatExists
 
