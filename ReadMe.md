@@ -16,7 +16,7 @@ Install-Module -Name AzureArtifactsPowerShellModuleHelper -Scope CurrentUser -Fo
 [string] $repository =
     'https://pkgs.dev.azure.com/YourOrganization/_packaging/YourFeed/nuget/v2' |
     Register-AzureArtifactsPSRepository
-Install-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Repository $repository
+Install-AndUpdateAzureArtifactsModule -Name 'ModuleNameInYourFeed' -Repository $repository
 ```
 
 ### Installing this module
