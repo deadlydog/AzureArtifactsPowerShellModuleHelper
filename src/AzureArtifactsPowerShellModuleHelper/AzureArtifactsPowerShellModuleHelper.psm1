@@ -887,14 +887,48 @@ function Install-AndUpdateAzureArtifactsModule
 		[switch] $AcceptLicense
 	)
 
-	[hashtable] $parametersWithCredentials = Get-PsBoundParametersWithCredential -parameters $PSBoundParameters
-	Install-AzureArtifactsModule @parametersWithCredentials
-
-	if ($null -ne $parametersWithCredentials.Repository)
+	Process
 	{
-		$parametersWithCredentials.Remove('Repository')
+		[hashtable] $parametersWithCredentials = Get-PsBoundParametersWithCredential -parameters $PSBoundParameters
+		Install-AzureArtifactsModule @parametersWithCredentials -WarningVariable warnings 3> $null
+		Write-UnexpectedInstallModuleWarnings -warnings $warnings
+
+		# The Update-AzureArtifactsModule does not take a Repository parameter, so we must remove it before splatting.
+		$parametersWithCredentials = Remove-RepositoryPropertyFromHashTable -hashTable $parametersWithCredentials
+		Update-AzureArtifactsModule @parametersWithCredentials
 	}
-	Update-AzureArtifactsModule @parametersWithCredentials
+
+	Begin
+	{
+		function Write-UnexpectedInstallModuleWarnings([System.Collections.ArrayList] $warnings)
+		{
+			[System.Management.Automation.WarningRecord[]] $validWarnings = @()
+			foreach ($warning in $warnings)
+			{
+				if (!$warning.ToString().Contains('is already installed'))
+				{
+					$validWarnings += $warning
+				}
+			}
+
+			if ($validWarnings.Count -gt 0)
+			{
+				foreach ($warning in $validWarnings)
+				{
+					Write-Warning $warning
+				}
+			}
+		}
+
+		function Remove-RepositoryPropertyFromHashTable([hashtable] $hashTable)
+		{
+			if ($null -ne $hashTable.Repository)
+			{
+				$hashTable.Remove('Repository')
+			}
+			return $hashTable
+		}
+	}
 }
 
 function Get-PsBoundParametersWithCredential([hashtable] $parameters)

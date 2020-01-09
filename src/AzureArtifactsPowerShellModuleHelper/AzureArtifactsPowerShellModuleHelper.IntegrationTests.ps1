@@ -417,7 +417,7 @@ Describe 'Installing a PowerShell module from Azure Artifacts' {
 		It 'Should install the module properly' {
 			# Arrange.
 			[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
-			[ScriptBlock] $action = { Install-AzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -Force -ErrorAction Stop }
+			[ScriptBlock] $action = { Install-AzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -ErrorAction Stop }
 			Uninstall-PowerShellModule -powerShellModuleName $PowerShellModuleName -ErrorAction 'SilentlyContinue'
 
 			# Act and Assert.
@@ -434,7 +434,7 @@ Describe 'Updating a PowerShell module from Azure Artifacts' {
 		It 'Should update the module properly when already installed, resulting in 2 versions being installed' {
 			# Arrange.
 			[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
-			[ScriptBlock] $action = { Update-AzureArtifactsModule -Name $PowerShellModuleName -Force -ErrorAction Stop }
+			[ScriptBlock] $action = { Update-AzureArtifactsModule -Name $PowerShellModuleName -ErrorAction Stop }
 			Uninstall-PowerShellModule -powerShellModuleName $PowerShellModuleName -ErrorAction 'SilentlyContinue'
 			Install-AzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -RequiredVersion $ValidOlderModuleVersionThatExists
 
@@ -454,7 +454,7 @@ Describe 'Installing-and-Updating a PowerShell module from Azure Artifacts' {
 		It 'Should install the module properly' {
 			# Arrange.
 			[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
-			[ScriptBlock] $action = { Install-AndUpdateAzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -Force -ErrorAction Stop }
+			[ScriptBlock] $action = { Install-AndUpdateAzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -ErrorAction Stop }
 			Uninstall-PowerShellModule -powerShellModuleName $PowerShellModuleName -ErrorAction 'SilentlyContinue'
 
 			# Act and Assert.
@@ -465,7 +465,7 @@ Describe 'Installing-and-Updating a PowerShell module from Azure Artifacts' {
 		It 'Should update the module properly when already installed, resulting in 2 versions being installed' {
 			# Arrange.
 			[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl
-			[ScriptBlock] $action = { Install-AndUpdateAzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -Force -ErrorAction Stop }
+			[ScriptBlock] $action = { Install-AndUpdateAzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -ErrorAction Stop }
 			Uninstall-PowerShellModule -powerShellModuleName $PowerShellModuleName -ErrorAction 'SilentlyContinue'
 			Install-AzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -RequiredVersion $ValidOlderModuleVersionThatExists
 
