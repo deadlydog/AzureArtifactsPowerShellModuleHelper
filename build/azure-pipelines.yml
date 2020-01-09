@@ -41,12 +41,12 @@ steps:
       Write-Host "Setting the prerelease version number variable to '$prereleaseVersionNumber'."
       Write-Host "##vso[task.setvariable variable=prereleaseVersionNumber]$prereleaseVersionNumber"
 
-# - task: Pester@8
-#   displayName: Run Pester PowerShell integration tests
-#   inputs:
-#     scriptFolder: '@{ Path = ''$(System.DefaultWorkingDirectory)\src\AzureArtifactsPowerShellModuleHelper\AzureArtifactsPowerShellModuleHelper.IntegrationTests.ps1''; Parameters = @{ AzureArtifactsPersonalAccessToken = ''$(AzureArtifactsPersonalAccessToken)'' }}'
-#     resultsFile: '$(System.DefaultWorkingDirectory)\Test-Pester.XML'
-#     run32Bit: False
+- task: Pester@8
+  displayName: Run Pester PowerShell integration tests
+  inputs:
+    scriptFolder: '@{ Path = ''$(System.DefaultWorkingDirectory)\src\AzureArtifactsPowerShellModuleHelper\AzureArtifactsPowerShellModuleHelper.IntegrationTests.ps1''; Parameters = @{ AzureArtifactsPersonalAccessToken = ''$(AzureArtifactsPersonalAccessToken)'' }}'
+    resultsFile: '$(System.DefaultWorkingDirectory)\Test-Pester.XML'
+    run32Bit: False
 
 - task: VersionPowerShellModule@2
   displayName: Version the PowerShell module manifests with the stable version number
