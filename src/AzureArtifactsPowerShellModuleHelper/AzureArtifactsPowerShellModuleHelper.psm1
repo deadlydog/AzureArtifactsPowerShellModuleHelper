@@ -146,24 +146,26 @@ function Register-AzureArtifactsPSRepository
 
 		function Test-CurrentlyInstalledNuGetPackageProviderVersionIsHighEnough([System.Version] $minimumRequiredVersion)
 		{
+			[string] $computerName = $Env:ComputerName
+
 			$nuGetPackageProviderModule =
 				Get-PackageProvider |
 				Where-Object { $_.Name -ieq 'NuGet' } # Use Where instead of -Name to avoid error when it is not installed.
 
 			if ($null -eq $nuGetPackageProviderModule)
 			{
-				Write-Information "The NuGet package provider is not installed."
+				Write-Information "The NuGet package provider is not installed on computer '$computerName'."
 				return $false
 			}
 
 			[System.Version] $installedVersion = $nuGetPackageProviderModule.Version
 			if ($installedVersion -lt $minimumRequiredVersion)
 			{
-				Write-Information "The installed version '$installedVersion' of the NuGet Package Provider does not satisfy the minimum required version of '$minimumRequiredVersion'."
+				Write-Information "The installed version '$installedVersion' of the NuGet Package Provider on computer '$computerName' does not satisfy the minimum required version of '$minimumRequiredVersion'."
 				return $false
 			}
 
-			Write-Information "The installed version '$installedVersion' of the NuGet Package Provider satisfies the minimum required version of '$minimumRequiredVersion'."
+			Write-Information "The installed version '$installedVersion' of the NuGet Package Provider on computer '$computerName' satisfies the minimum required version of '$minimumRequiredVersion'."
 			return $true
 		}
 
