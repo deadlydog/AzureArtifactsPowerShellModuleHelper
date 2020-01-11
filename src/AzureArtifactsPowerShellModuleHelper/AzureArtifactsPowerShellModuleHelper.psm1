@@ -188,7 +188,7 @@ function Register-AzureArtifactsPSRepository
 			}
 			else
 			{
-				Write-Information "Skipping installing the PowerShellGet module, as version '$latestPowerShellGetVersionInstalled' is already installed on computer '$computerName', which satisfies the minimum required version '$minimumRequiredPowerShellGetVersion'."
+				Write-Information "The installed version '$latestPowerShellGetVersionInstalled' of the PowerShellGet module on computer '$computerName' satisfies the minimum required version of '$minimumRequiredPowerShellGetVersion'."
 			}
 
 			Import-PowerShellGetModule -minimumRequiredPowerShellGetVersion $minimumRequiredPowerShellGetVersion
