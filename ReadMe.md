@@ -31,7 +31,7 @@ Install-Module -Name AzureArtifactsPowerShellModuleHelper -Scope CurrentUser -Fo
 - `-Force` is used to suppress any user prompts.
 - `-Repository PSGallery` is used to avoid warnings by not having Install-Module look for the module in your Azure Artifacts feed, which it would require credentials to access.
 - I would typically also recommend using `-MaximumVersion 2.9999` to ensure that scripts using this module continue to work if a breaking change is introduced and the major version is incremented to v3.
-However, there is currently [a bug with the `MaximumVersion` parameter](https://github.com/PowerShell/PowerShellGet/issues/562) on some machines, so I wouldn't recommend using it until that gets addressed.
+However, there is currently [a bug with the `MaximumVersion` parameter](https://github.com/PowerShell/PowerShellGetv2/issues/562) on some machines, so I wouldn't recommend using it until that gets addressed.
 Instead, you can use `-RequiredVersion 2.3.9` (or whatever [the latest version is][PowerShellGalleryPackageUrl]) to ensure you don't accidentally download an update with a breaking change.
 
 Feel free to omit these parameters if needed, but they are recommended if you are using this in an automated script that won't have human intervention.
