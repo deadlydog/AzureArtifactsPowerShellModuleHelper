@@ -979,12 +979,6 @@ function Get-PsBoundParametersWithCredential([hashtable] $parameters)
 {
 	[PSCredential] $credential = Get-AzureArtifactsCredential -credential $parameters.Credential
 
-	if ($null -eq $credential)
-	{
-		[string] $computerName = $Env:ComputerName
-		Write-Warning "A personal access token was not found on '$computerName', so we could not dynamically obtain the credential to use."
-	}
-
 	$newParameters = $parameters
 	$newParameters.Credential = $credential
 
@@ -995,6 +989,7 @@ function Get-AzureArtifactsCredential([PSCredential] $credential = $null)
 {
 	if ($null -ne $credential)
 	{
+		Write-Verbose "Credentials were explicitly provided, so they will be used."
 		return $credential
 	}
 
@@ -1002,7 +997,14 @@ function Get-AzureArtifactsCredential([PSCredential] $credential = $null)
 
 	if ($null -ne $personalAccessToken)
 	{
+		Write-Verbose "Credentials were not explicitly provided, but a Personal Access Token was found, so it will be used."
 		$credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $personalAccessToken
+	}
+
+	if ($null -eq $credential)
+	{
+		[string] $computerName = $Env:ComputerName
+		Write-Warning "Credentials were not explicitly provided, and a Personal Access Token was not found on '$computerName', so we could not dynamically obtain the credential to use."
 	}
 
 	return $credential

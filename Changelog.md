@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.3.15 - May 14, 2021
+
+- Add more logging to make troubleshooting easier.
+
 ## v2.3.14 - May 14, 2021
 
 - Implement work around for [PowerShellGet v2 bug](https://github.com/PowerShell/PowerShellGetv2/issues/619#issuecomment-718837449) where it can't resolve Azure Artifact feed location.
