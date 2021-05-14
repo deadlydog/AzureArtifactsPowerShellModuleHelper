@@ -24,7 +24,7 @@ Install-AndUpdateAzureArtifactsModule -Name 'ModuleNameInYourFeed' -Repository $
 The first step is to install this module, which can be done with the PowerShell command:
 
 ```powershell
-Install-Module -Name AzureArtifactsPowerShellModuleHelper -Scope CurrentUser -Force -Repository PSGallery -RequiredVersion 2.3.9
+Install-Module -Name AzureArtifactsPowerShellModuleHelper -Scope CurrentUser -Force -Repository PSGallery -RequiredVersion 2.3.14
 ```
 
 - `-Scope CurrentUser` is used so that admin permissions are not required to install the module.
@@ -32,7 +32,7 @@ Install-Module -Name AzureArtifactsPowerShellModuleHelper -Scope CurrentUser -Fo
 - `-Repository PSGallery` is used to avoid warnings by not having Install-Module look for the module in your Azure Artifacts feed, which it would require credentials to access.
 - I would typically also recommend using `-MaximumVersion 2.9999` to ensure that scripts using this module continue to work if a breaking change is introduced and the major version is incremented to v3.
 However, there is currently [a bug with the `MaximumVersion` parameter](https://github.com/PowerShell/PowerShellGetv2/issues/562) on some machines, so I wouldn't recommend using it until that gets addressed.
-Instead, you can use `-RequiredVersion 2.3.9` (or whatever [the latest version is][PowerShellGalleryPackageUrl]) to ensure you don't accidentally download an update with a breaking change.
+Instead, you can use `-RequiredVersion 2.3.14` (or whatever [the latest version is][PowerShellGalleryPackageUrl]) to ensure you don't accidentally download an update with a breaking change.
 
 Feel free to omit these parameters if needed, but they are recommended if you are using this in an automated script that won't have human intervention.
 
@@ -182,6 +182,16 @@ For example, it does not provide a `RequiredVersion` parameter because it would 
 It also does not provide a `MinimumVersion` parameter because that cannot be used with `Update-AzureArtifactsModule`.
 
 An alternative to this cmdlet would be to use the `Force` parameter with `Install-AzureArtifactsModule`, however that has the downside of downloading and installing the module every time it's called, even if the same version is already installed.
+
+## Changelog
+
+See what's changed in the PowerShell module over time by viewing [the changelog](Changelog.md).
+
+## Donate
+
+Buy me a donut 🍩 for providing this PowerShell module open source and for free :)
+
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.me/deadlydogDan/5USD)
 
 <!-- Links used multiple times -->
 [MicrosoftCredentialProviderEnvironmentVariableDocumentationUrl]: https://github.com/Microsoft/artifacts-credprovider#environment-variables
