@@ -120,7 +120,7 @@ To get more details on what happens during this process, you can use the Informa
 After registering your Azure Artifacts repository, you can find modules in it by using the `Find-AzureArtifactsModule` cmdlet:
 
 ```powershell
-Install-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Repository $repository
+Find-AzureArtifactsModule -Name 'ModuleNameInYourFeed' -Repository $repository
 ```
 
 The `Find-AzureArtifactsModule` takes all the same parameters as the native [`Find-Module` cmdlet][MicrosoftFindModuleDocumentationUrl].
