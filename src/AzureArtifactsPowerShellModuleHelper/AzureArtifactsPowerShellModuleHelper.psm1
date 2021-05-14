@@ -75,6 +75,12 @@ function Register-AzureArtifactsPSRepository
 
 		[string] $repositoryNameOfFeed = Register-AzureArtifactsPowerShellRepository -feedUrl $FeedUrl -Repository $Repository -credential $Credential
 
+		# We must also register the Package Source to overcome a bug in PowerShellGet v2.
+		# More info at:
+		#	https://github.com/PowerShell/PowerShellGetv2/issues/619#issuecomment-718837449
+		#	https://stackoverflow.com/questions/60973101/azure-powershell-module-properly-pushed-to-artifacts-feed-repository-cannot-be
+		Register-AzureArtifactsPackageSource -feedUrl $FeedUrl -repositoryName $repositoryNameOfFeed -credential $Credential
+
 		return $repositoryNameOfFeed
 	}
 
@@ -88,6 +94,7 @@ function Register-AzureArtifactsPSRepository
 			[bool] $psRepositoryIsAlreadyRegistered = ($null -ne $existingPsRepositoryForFeed)
 			if ($psRepositoryIsAlreadyRegistered)
 			{
+				Write-Verbose "Found existing PSRepository '$($existingPsRepositoryForFeed.Name)' for Feed URL '$feedUrl'."
 				return $existingPsRepositoryForFeed.Name
 			}
 
@@ -95,9 +102,11 @@ function Register-AzureArtifactsPSRepository
 			[bool] $psRepositoryWithDesiredNameAlreadyExists = ($null -ne $existingPsRepositoryWithSameName)
 			if ($psRepositoryWithDesiredNameAlreadyExists)
 			{
+				Write-Verbose "PSRepository with name '$repository' already exists, but for a different Feed URL, so will attempt to create repository with slightly different name."
 				$repository += '-' + (Get-RandomCharacters -length 3)
 			}
 
+			Write-Verbose "Attempting to create PSRepository with name '$repository' for SourceLocation '$feedUrl'."
 			if ($null -eq $credential)
 			{
 				[string] $computerName = $Env:ComputerName
@@ -110,6 +119,39 @@ function Register-AzureArtifactsPSRepository
 			}
 
 			return $repository
+		}
+
+		function Register-AzureArtifactsPackageSource([string] $feedUrl, [string] $repositoryName, [PSCredential] $credential)
+		{
+			$packageSources = Get-PackageSource
+
+			[PSCustomObject] $existingPackageSourceForFeed = $packageSources | Where-Object { $_.Location -ieq $feedUrl }
+			[bool] $packageSourceIsAlreadyRegistered = ($null -ne $existingPackageSourceForFeed)
+			if ($packageSourceIsAlreadyRegistered)
+			{
+				Write-Verbose "Found existing PackageSource '$($existingPackageSourceForFeed.Name)' for Feed URL '$feedUrl'."
+				return
+			}
+
+			[PSCustomObject] $existingPackageSourcesWithSameName = $packageSources | Where-Object { $_.Name -ieq $repositoryName }
+			[bool] $packageSourceWithDesiredNameAlreadyExists = ($null -ne $existingPackageSourcesWithSameName)
+			if ($packageSourceWithDesiredNameAlreadyExists)
+			{
+				Write-Verbose "PackageSource with name '$repositoryName' already exists, but for a different Feed URL, so will attempt to create repository with slightly different name."
+				$repositoryName += '-' + (Get-RandomCharacters -length 3)
+			}
+
+			Write-Verbose "Attempting to create PackageSource with name '$repositoryName' for Location '$feedUrl'."
+			if ($null -eq $credential)
+			{
+				[string] $computerName = $Env:ComputerName
+				Write-Warning "Credentials were not provided, so we will attempt to register a new PackageSource to connect to '$feedUrl' on '$computerName' without credentials."
+				Register-PackageSource -Name $repositoryName -Location $feedUrl -ProviderName NuGet -SkipValidate > $null
+			}
+			else
+			{
+				Register-PackageSource -Name $repositoryName -Location $feedUrl -ProviderName NuGet -SkipValidate -Credential $credential > $null
+			}
 		}
 
 		function Get-RandomCharacters([int] $length = 8)
