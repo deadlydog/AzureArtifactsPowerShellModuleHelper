@@ -1,6 +1,6 @@
 # Changelog
 
-## v2.3.15 - May 14, 2021
+## v2.3.17 - May 14, 2021
 
 - Add more logging to make troubleshooting easier.
 
