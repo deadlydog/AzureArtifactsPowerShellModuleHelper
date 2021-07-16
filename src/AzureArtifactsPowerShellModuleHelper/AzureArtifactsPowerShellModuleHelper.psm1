@@ -231,7 +231,7 @@ function Register-AzureArtifactsPSRepository
 				Write-Information "The installed version '$latestPowerShellGetVersionInstalled' of the PowerShellGet module on computer '$computerName' satisfies the minimum required version of '$minimumRequiredPowerShellGetVersion'."
 			}
 
-			Import-LatestPowerShellGetModule -minimumRequiredPowerShellGetVersion $minimumRequiredPowerShellGetVersion
+			Import-LatestPowerShellGetModule -latestPowerShellGetVersionInstalled $latestPowerShellGetVersionInstalled
 		}
 
 		function Import-LatestPowerShellGetModule([System.Version] $latestPowerShellGetVersionInstalled)
