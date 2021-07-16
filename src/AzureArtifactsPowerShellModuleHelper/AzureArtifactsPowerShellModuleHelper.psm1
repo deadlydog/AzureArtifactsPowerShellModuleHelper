@@ -241,7 +241,7 @@ function Register-AzureArtifactsPSRepository
 			[bool] $powerShellGetIsNotAlreadyImported = ($null -eq $currentlyImportedVersion)
 			if ($powerShellGetIsNotAlreadyImported)
 			{
-				Import-Module -Name PowerShellGet -RequiredVersion $latestPowerShellGetVersionInstalled -Force
+				Import-Module -Name PowerShellGet -RequiredVersion $latestPowerShellGetVersionInstalled -Global -Force
 				$currentlyImportedVersion = Get-CurrentlyImportedPowerShellGetModuleVersion
 			}
 			Write-Verbose "The currently imported PowerShellGet module version is '$currentlyImportedVersion', and the latest installed version is '$latestPowerShellGetVersionInstalled'."
@@ -254,7 +254,7 @@ function Register-AzureArtifactsPSRepository
 
 			Write-Warning "The PowerShellGet module version currently imported is '$currentlyImportedVersion', which is less than the latest installed version '$latestPowerShellGetVersionInstalled'. The current PowerShellGet module will be removed and the latest version imported."
 			Remove-Module -Name PowerShellGet -Force
-			Import-Module -Name PowerShellGet -RequiredVersion $latestPowerShellGetVersionInstalled -Force
+			Import-Module -Name PowerShellGet -RequiredVersion $latestPowerShellGetVersionInstalled -Global -Force
 
 			$currentlyImportedVersion = Get-CurrentlyImportedPowerShellGetModuleVersion
 			Write-Verbose "The PowerShellGet module version now imported is '$currentlyImportedVersion'."
