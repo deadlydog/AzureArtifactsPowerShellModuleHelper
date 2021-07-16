@@ -706,7 +706,7 @@ function Install-AzureArtifactsModule
 
 	Install-AndImportPowerShellGet -scope $Scope
 
-	$powerShellGetVersionsImported = Get-Module -Name PowerShellGet | Select-Object Version
+	$powerShellGetVersionsImported = Get-Module -Name PowerShellGet | Select-Object -ExpandProperty Version
 	Write-Verbose "About to run Install-Module. Current PowerShellGet versions imported are '$powerShellGetVersionsImported'."
 
 	[hashtable] $parametersWithCredentials = Get-PsBoundParametersWithCredential -parameters $PSBoundParameters
@@ -795,6 +795,9 @@ function Update-AzureArtifactsModule
 	)
 
 	Install-AndImportPowerShellGet -scope $Scope
+
+	$powerShellGetVersionsImported = Get-Module -Name PowerShellGet | Select-Object -ExpandProperty Version
+	Write-Verbose "About to run Update-Module. Current PowerShellGet versions imported are '$powerShellGetVersionsImported'."
 
 	[hashtable] $parametersWithCredentials = Get-PsBoundParametersWithCredential -parameters $PSBoundParameters
 	Update-Module @parametersWithCredentials
