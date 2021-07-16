@@ -217,11 +217,7 @@ function Register-AzureArtifactsPSRepository
 			[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 
 			[System.Version] $minimumRequiredPowerShellGetVersion = '2.2.1'
-			$latestPowerShellGetVersionInstalled =
-				Get-Module -Name 'PowerShellGet' -ListAvailable |
-				Select-Object -ExpandProperty 'Version' -Unique |
-				Sort-Object -Descending |
-				Select-Object -First 1
+			$latestPowerShellGetVersionInstalled = Get-LatestPowerShellGetModuleVersionInstalled
 
 			[bool] $minimumPowerShellGetVersionIsNotInstalled = ($latestPowerShellGetVersionInstalled -lt $minimumRequiredPowerShellGetVersion)
 			if ($minimumPowerShellGetVersionIsNotInstalled)
@@ -235,30 +231,41 @@ function Register-AzureArtifactsPSRepository
 				Write-Information "The installed version '$latestPowerShellGetVersionInstalled' of the PowerShellGet module on computer '$computerName' satisfies the minimum required version of '$minimumRequiredPowerShellGetVersion'."
 			}
 
-			Import-PowerShellGetModule -minimumRequiredPowerShellGetVersion $minimumRequiredPowerShellGetVersion
+			Import-LatestPowerShellGetModule -minimumRequiredPowerShellGetVersion $minimumRequiredPowerShellGetVersion
 		}
 
-		function Import-PowerShellGetModule([System.Version] $minimumRequiredPowerShellGetVersion)
+		function Import-LatestPowerShellGetModule([System.Version] $latestPowerShellGetVersionInstalled)
 		{
 			$currentlyImportedVersion = Get-CurrentlyImportedPowerShellGetModuleVersion
 
 			[bool] $powerShellGetIsNotAlreadyImported = ($null -eq $currentlyImportedVersion)
 			if ($powerShellGetIsNotAlreadyImported)
 			{
-				Import-Module -Name PowerShellGet -Force
+				Import-Module -Name PowerShellGet -RequiredVersion $latestPowerShellGetVersionInstalled -Force
 				$currentlyImportedVersion = Get-CurrentlyImportedPowerShellGetModuleVersion
 			}
 			Write-Verbose "The currently imported PowerShellGet module version is '$currentlyImportedVersion'."
 
-			[bool] $powerShellGetVersionImportedIsHighEnough = ($currentlyImportedVersion -ge $minimumRequiredPowerShellGetVersion)
-			if ($powerShellGetVersionImportedIsHighEnough)
+			[bool] $lastestModuleVersionIsImported = ($currentlyImportedVersion -ge $latestPowerShellGetVersionInstalled)
+			if ($lastestModuleVersionIsImported)
 			{
 				return
 			}
 
-			Write-Warning "The PowerShellGet module version currently imported is '$currentlyImportedVersion', which does not meet the minimum requirement of '$minimumRequiredPowerShellGetVersion'. The current PowerShellGet module will be removed and a newer version imported."
+			Write-Warning "The PowerShellGet module version currently imported is '$currentlyImportedVersion', which is less than the latest installed version '$minimumRequiredPowerShellGetVersion'. The current PowerShellGet module will be removed and the latest version imported."
 			Remove-Module -Name PowerShellGet -Force
-			Import-Module -Name PowerShellGet -Force
+			Import-Module -Name PowerShellGet -RequiredVersion $latestPowerShellGetVersionInstalled -Force
+		}
+
+		function Get-LatestPowerShellGetModuleVersionInstalled
+		{
+			$latestPowerShellGetVersionInstalled =
+				Get-Module -Name 'PowerShellGet' -ListAvailable |
+				Select-Object -ExpandProperty 'Version' -Unique |
+				Sort-Object -Descending |
+				Select-Object -First 1
+
+			return $latestPowerShellGetVersionInstalled
 		}
 
 		function Get-CurrentlyImportedPowerShellGetModuleVersion
