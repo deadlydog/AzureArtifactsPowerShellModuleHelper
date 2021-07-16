@@ -252,7 +252,7 @@ function Register-AzureArtifactsPSRepository
 				return
 			}
 
-			Write-Warning "The PowerShellGet module version currently imported is '$currentlyImportedVersion', which is less than the latest installed version '$minimumRequiredPowerShellGetVersion'. The current PowerShellGet module will be removed and the latest version imported."
+			Write-Warning "The PowerShellGet module version currently imported is '$currentlyImportedVersion', which is less than the latest installed version '$latestPowerShellGetVersionInstalled'. The current PowerShellGet module will be removed and the latest version imported."
 			Remove-Module -Name PowerShellGet -Force
 			Import-Module -Name PowerShellGet -RequiredVersion $latestPowerShellGetVersionInstalled -Force
 		}
