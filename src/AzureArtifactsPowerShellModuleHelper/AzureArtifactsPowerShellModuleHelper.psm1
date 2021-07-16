@@ -246,8 +246,8 @@ function Register-AzureArtifactsPSRepository
 			}
 			Write-Verbose "The currently imported PowerShellGet module version is '$currentlyImportedVersion', and the latest installed version is '$latestPowerShellGetVersionInstalled'."
 
-			[bool] $lastestModuleVersionIsImported = ($currentlyImportedVersion -ge $latestPowerShellGetVersionInstalled)
-			if ($lastestModuleVersionIsImported)
+			[bool] $latestModuleVersionIsImported = ($currentlyImportedVersion -ge $latestPowerShellGetVersionInstalled)
+			if ($latestModuleVersionIsImported)
 			{
 				return
 			}
