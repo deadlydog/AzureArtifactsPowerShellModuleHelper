@@ -245,7 +245,7 @@ function Register-AzureArtifactsPSRepository
 			[bool] $powerShellGetIsNotAlreadyImported = ($null -eq $currentlyImportedVersion)
 			if ($powerShellGetIsNotAlreadyImported)
 			{
-				Import-Module -Name PowerShellGet -MinimumVersion $minimumRequiredPowerShellGetVersion -Global -Force
+				Import-Module -Name PowerShellGet -Force
 				$currentlyImportedVersion = Get-CurrentlyImportedPowerShellGetModuleVersion
 			}
 			Write-Verbose "The currently imported PowerShellGet module version is '$currentlyImportedVersion'."
@@ -258,7 +258,7 @@ function Register-AzureArtifactsPSRepository
 
 			Write-Warning "The PowerShellGet module version currently imported is '$currentlyImportedVersion', which does not meet the minimum requirement of '$minimumRequiredPowerShellGetVersion'. The current PowerShellGet module will be removed and a newer version imported."
 			Remove-Module -Name PowerShellGet -Force
-			Import-Module -Name PowerShellGet -MinimumVersion $minimumRequiredPowerShellGetVersion -Global -Force
+			Import-Module -Name PowerShellGet -Force
 		}
 
 		function Get-CurrentlyImportedPowerShellGetModuleVersion
