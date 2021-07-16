@@ -706,6 +706,9 @@ function Install-AzureArtifactsModule
 
 	Install-AndImportPowerShellGet -scope $Scope
 
+	$powerShellGetVersionsImported = Get-Module -Name PowerShellGet | Select-Object Version
+	Write-Verbose "About to run Install-Module. Current PowerShellGet versions imported are '$powerShellGetVersionsImported'."
+
 	[hashtable] $parametersWithCredentials = Get-PsBoundParametersWithCredential -parameters $PSBoundParameters
 	Install-Module @parametersWithCredentials
 }
@@ -1040,19 +1043,14 @@ function Get-LatestPowerShellGetModuleVersionInstalled
 
 function Get-CurrentlyImportedPowerShellGetModuleVersion
 {
-	[System.Version] $powerShellGetModuleVersionImported = $null
+	[System.Version] $lowestCurrentlyImportedModuleVersion = $null
 	$lowestCurrentlyImportedModuleVersion =
 		Get-Module -Name PowerShellGet |
 		Select-Object -ExpandProperty 'Version' -Unique |
 		Sort-Object |
 		Select-Object -First 1
 
-	if ($null -ne $lowestCurrentlyImportedModuleVersion)
-	{
-		$powerShellGetModuleVersionImported = $lowestCurrentlyImportedModuleVersion
-	}
-
-	return $powerShellGetModuleVersionImported
+	return $lowestCurrentlyImportedModuleVersion
 }
 
 Export-ModuleMember -Function Find-AzureArtifactsModule
