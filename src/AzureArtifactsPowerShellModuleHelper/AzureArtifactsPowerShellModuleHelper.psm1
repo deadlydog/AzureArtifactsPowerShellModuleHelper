@@ -244,7 +244,7 @@ function Register-AzureArtifactsPSRepository
 				Import-Module -Name PowerShellGet -RequiredVersion $latestPowerShellGetVersionInstalled -Force
 				$currentlyImportedVersion = Get-CurrentlyImportedPowerShellGetModuleVersion
 			}
-			Write-Verbose "The currently imported PowerShellGet module version is '$currentlyImportedVersion'."
+			Write-Verbose "The currently imported PowerShellGet module version is '$currentlyImportedVersion', and the lastest installed version is '$latestPowerShellGetVersionInstalled'."
 
 			[bool] $lastestModuleVersionIsImported = ($currentlyImportedVersion -ge $latestPowerShellGetVersionInstalled)
 			if ($lastestModuleVersionIsImported)
