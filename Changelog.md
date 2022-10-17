@@ -1,6 +1,6 @@
 # Changelog
 
-## v2.4.0 - October 16, 2022
+## v2.4.2 - October 16, 2022
 
 - Replace Windows-specific method for getting the current user with cross-platform code to address [issue #21](https://github.com/deadlydog/AzureArtifactsPowerShellModuleHelper/issues/21).
 
