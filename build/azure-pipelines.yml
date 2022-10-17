@@ -12,7 +12,7 @@ pool:
 name: 'Set dynamically below in a task'
 
 variables:
-  version.MajorMinor: '2.3' # Manually adjust the version number as needed for semantic versioning. Revision is auto-incremented.
+  version.MajorMinor: '2.4' # Manually adjust the version number as needed for semantic versioning. Revision is auto-incremented.
   version.Revision: $[counter(variables['version.MajorMinor'], 0)]
   versionNumber: '$(version.MajorMinor).$(version.Revision)'
   prereleaseVersionNumber: 'Set dynamically below in a task'

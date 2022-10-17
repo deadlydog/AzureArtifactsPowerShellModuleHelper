@@ -174,7 +174,7 @@ function Register-AzureArtifactsPSRepository
 		function Install-NuGetPackageProvider([string] $scope)
 		{
 			[string] $computerName = $Env:ComputerName
-			[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+			[string] $currentUser = (& whoami)
 
 			[System.Version] $minimumRequiredNuGetPackageProviderVersion = '2.8.5.208' # Minimum version required to install NuGet packages.
 			[bool] $nuGetPackageProviderVersionIsHighEnough = Test-CurrentlyInstalledNuGetPackageProviderVersionIsHighEnough -minimumRequiredVersion $minimumRequiredNuGetPackageProviderVersion
@@ -214,7 +214,7 @@ function Register-AzureArtifactsPSRepository
 		function Install-AndImportPowerShellGet([string] $scope)
 		{
 			[string] $computerName = $Env:ComputerName
-			[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+			[string] $currentUser = (& whoami)
 
 			[System.Version] $minimumRequiredPowerShellGetVersion = '2.2.1'
 			$latestPowerShellGetVersionInstalled =
@@ -226,7 +226,7 @@ function Register-AzureArtifactsPSRepository
 			[bool] $minimumPowerShellGetVersionIsNotInstalled = ($latestPowerShellGetVersionInstalled -lt $minimumRequiredPowerShellGetVersion)
 			if ($minimumPowerShellGetVersionIsNotInstalled)
 			{
-				[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+				[string] $currentUser = (& whoami)
 				Write-Information "Installing latest PowerShellGet version for user '$currentUser' to scope '$scope' on computer '$computerName'."
 				Install-Module -Name PowerShellGet -Repository PSGallery -Scope $scope -Force -AllowClobber
 			}
@@ -431,7 +431,7 @@ function Register-AzureArtifactsPSRepository
 # 			[bool] $versionNeedsToBeInstalled = ($versionToInstall -notin $currentModuleVersionsInstalled) -or $force
 # 			if ($versionNeedsToBeInstalled)
 # 			{
-# 				[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+# 				[string] $currentUser = (& whoami)
 # 				[string] $moduleVersionsInstalledString = $currentModuleVersionsInstalled -join ','
 # 				Write-Information "Current installed versions of PowerShell module '$powerShellModuleName' on computer '$computerName' are '$moduleVersionsInstalledString'. Installing version '$versionToInstall' for user '$currentUser' to scope '$scope'."
 # 				try
@@ -520,7 +520,7 @@ function Register-AzureArtifactsPSRepository
 # 		function Write-ModuleVersionImported([string] $powerShellModuleName, [string] $version)
 # 		{
 # 			[string] $computerName = $Env:ComputerName
-# 			[string] $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+# 			[string] $currentUser = (& whoami)
 
 # 			$moduleImported = Get-Module -Name $powerShellModuleName
 
