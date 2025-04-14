@@ -11,8 +11,8 @@ param
 )
 
 Set-StrictMode -Version Latest
-[string] $THIS_SCRIPTS_PATH = $PSCommandPath
-[string] $moduleFilePathToTest = $THIS_SCRIPTS_PATH.Replace('.IntegrationTests.ps1', '.psm1') | Resolve-Path
+[string] $RepositoryRootDirectoryPath = Split-Path -Path $PSScriptRoot -Parent
+[string] $moduleFilePathToTest = (Join-Path $RepositoryRootDirectoryPath -ChildPath 'src\AzureArtifactsPowerShellModuleHelper\AzureArtifactsPowerShellModuleHelper.psm1') | Resolve-Path
 Write-Verbose "Importing the module file '$moduleFilePathToTest' to run tests against it." -Verbose
 Import-Module -Name $moduleFilePathToTest -Force
 [string] $ModuleNameBeingTested = ((Split-Path -Path $moduleFilePathToTest -Leaf) -split '\.')[0] # Filename without the extension.
