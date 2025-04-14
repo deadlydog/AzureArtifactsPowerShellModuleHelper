@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.4.4 - April 14, 2025
+
+- chore: Do not include Integration Tests ps1 file in the module, as it is not needed, not signed, and can prevent `Install-Module` from installing the module properly depending on execution policy settings.
+
 ## v2.4.2 - October 16, 2022
 
 - Replace Windows-specific method for getting the current user with cross-platform code to address [issue #21](https://github.com/deadlydog/AzureArtifactsPowerShellModuleHelper/issues/21).
