@@ -7,6 +7,9 @@ One main benefit of this package is not having to provide credentials for every 
 
 This package is available on [the public PowerShell gallery here][PowerShellGalleryPackageUrl].
 
+> NOTE: [Microsoft.PowerShell.PSResourceGet](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.psresourceget/) has been updated to support the Azure Artifacts Credential Provider in v1.2.0-preview2, so if you use PSResourceGet to find, install, and update modules, this module is no longer necessary.
+> See [this issue](https://github.com/PowerShell/PSResourceGet/issues/1601) for more details.
+
 ## Quick-start guide
 
 Assuming you already have [an environment variable with your PAT setup][MicrosoftCredentialProviderEnvironmentVariableDocumentationUrl], you can install your Azure Artifact modules using:
