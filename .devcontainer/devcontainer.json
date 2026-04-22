@@ -1,0 +1,44 @@
+// For format details, see: https://aka.ms/devcontainer.json.
+// For config options, see: https://github.com/devcontainers/templates/tree/main/src/powershell.
+{
+	"name": "PowerShell",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/dotnet/sdk:10.0",
+	"features": {
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			"installZsh": "true",
+			"username": "vscode",
+			"upgradePackages": "false",
+			"nonFreePackages": "true"
+		}//, // Uncomment this line and the one below to install the dotnet CLI.
+		//"ghcr.io/devcontainers/features/dotnet:2": "latest" // Installs the dotnet CLI.
+	},
+
+	// Set pwsh as the default shell for the devcontainer, install required PowerShell modules, and install NPM and CSpell.
+	// If you do not plan to use CSpell, you can remove everything after and including 'sudo apt update'.
+	"postCreateCommand": "sudo chsh vscode -s \"$(which pwsh)\"; pwsh -c \"Install-Module Pester -Force\"; pwsh -c \"Install-Module PSScriptAnalyzer -Force\"; sudo apt update; sudo DEBIAN_FRONTEND=noninteractive apt install -y npm; npm install cspell",
+
+	// Configure tool-specific properties.
+	"customizations": {
+		// Configure properties specific to VS Code.
+		"vscode": {
+			// Set *default* container specific settings.json values on container create.
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "pwsh"
+			},
+			// Add the IDs of extensions you want installed when the container is created.
+			"extensions": [
+				"EditorConfig.EditorConfig",
+				"ms-vscode.powershell",
+				"streetsidesoftware.code-spell-checker",
+				"TylerLeonhardt.vscode-inline-values-powershell",
+				"yzhang.markdown-all-in-one"
+			]
+		}
+	}
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+}

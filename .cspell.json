@@ -6,6 +6,7 @@
 	"version": "0.2",
 	"language": "en",
 	"ignorePaths": [
+		".devcontainer/devcontainer.json",
 		".github/workflows/build-and-test-powershell-module.yml",
 		".github/workflows/build-test-and-deploy-powershell-module.yml",
 		".gitignore",
