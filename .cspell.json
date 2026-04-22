@@ -20,6 +20,7 @@
 		"unshown"
 	],
 	"ignoreWords": [
+		"devcontainer",
 		"pkgs",
 		"pwsh"
 	]
