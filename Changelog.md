@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.4.8 - April 22, 2026
+
+- fix: Do not create duplicate PSRepositories when the feed already exists.
+  Affected newer versions of PowerShellGet, as it made a breaking change and changed a property name.
+
 ## v2.4.4 - April 14, 2025
 
 - chore: Do not include Integration Tests ps1 file in the module, as it is not needed, not signed, and can prevent `Install-Module` from installing the module properly depending on execution policy settings.
