@@ -10,6 +10,7 @@
 		".github/workflows/build-and-test-powershell-module.yml",
 		".github/workflows/build-test-and-deploy-powershell-module.yml",
 		".gitignore",
+		".vscode/extensions.json"
 	],
 	"words": [
 		"colours",
@@ -19,6 +20,7 @@
 		"unshown"
 	],
 	"ignoreWords": [
-		"pkgs"
+		"pkgs",
+		"pwsh"
 	]
 }
