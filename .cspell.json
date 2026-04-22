@@ -1,0 +1,23 @@
+// This is the configuration file for cspell (code spell check).
+// Use this to define legitimate words not in the dictionary, and other words the spellcheck should ignore.
+// Used by the streetsidesoftware.code-spell-checker VS Code extension and streetsidesoftware/cspell-action@v3 GitHub Action.
+// For more information on configuration, see https://cspell.org/configuration/.
+{
+	"version": "0.2",
+	"language": "en",
+	"ignorePaths": [
+		".github/workflows/build-and-test-powershell-module.yml",
+		".github/workflows/build-test-and-deploy-powershell-module.yml",
+		".gitignore",
+	],
+	"words": [
+		"colours",
+		"gifs",
+		"hashtable", // PowerShell Hashtable
+		"outputtype", // PowerShell keyword
+		"unshown"
+	],
+	"ignoreWords": [
+		"pkgs"
+	]
+}

@@ -53,7 +53,7 @@ You can also follow [Microsoft's documentation][MicrosoftCredentialProviderEnvir
 - Value: `{"endpointCredentials": [{"endpoint":"https://pkgs.dev.azure.com/YourOganization/_packaging/YourFeed/nuget/v3/index.json", "username":"AzureDevOps", "password":"YOUR_PERSONAL_ACCESS_TOKEN"}]}`
 
 Setting up the environment variable is not a hard requirement, but it allows you to avoid creating and passing in the `Credential` parameter, which is one of the main benefits of using this module;
-The cmdlets in this module check if the `VSS_NUGET_EXTERNAL_FEED_ENDPOINTS` environment variable is present and create the Crendential object automatically if needed.
+The cmdlets in this module check if the `VSS_NUGET_EXTERNAL_FEED_ENDPOINTS` environment variable is present and create the Credential object automatically if needed.
 
 ### Explicitly using your Personal Access Token
 
