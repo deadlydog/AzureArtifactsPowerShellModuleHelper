@@ -90,7 +90,10 @@ function Register-AzureArtifactsPSRepository
 		{
 			$psRepositories = Get-PSRepository
 
-			[PSCustomObject] $existingPsRepositoryForFeed = $psRepositories | Where-Object { $_.SourceLocation -ieq $feedUrl }
+			# Old versions of PowerShellGet use SourceLocation and newer ones use Uri for the feed URL, so check both.
+			[PSCustomObject] $existingPsRepositoryForFeed = $psRepositories |
+				Where-Object { $_.SourceLocation -ieq $feedUrl -or $_.Uri -ieq $feedUrl } |
+				Select-Object -First 1
 			[bool] $psRepositoryIsAlreadyRegistered = ($null -ne $existingPsRepositoryForFeed)
 			if ($psRepositoryIsAlreadyRegistered)
 			{
@@ -98,7 +101,9 @@ function Register-AzureArtifactsPSRepository
 				return $existingPsRepositoryForFeed.Name
 			}
 
-			[PSCustomObject] $existingPsRepositoryWithSameName = $psRepositories | Where-Object { $_.Name -ieq $repository }
+			[PSCustomObject] $existingPsRepositoryWithSameName = $psRepositories |
+				Where-Object { $_.Name -ieq $repository } |
+				Select-Object -First 1
 			[bool] $psRepositoryWithDesiredNameAlreadyExists = ($null -ne $existingPsRepositoryWithSameName)
 			if ($psRepositoryWithDesiredNameAlreadyExists)
 			{
