@@ -1,5 +1,6 @@
 # These are Integration tests (not unit tests).
 # This means that these tests will actually reach out to the specified $FeedUrl and connect/authenticate against it.
+# They will also interact with the local machines PowerShell PS Repositories and installed modules.
 # In order for these tests to run successfully:
 #	- You need to use a real Azure Artifacts $FeedUrl and a real module to import from it.
 # 	- You need to use a real Azure Artifacts Personal Access Token (PAT) with package read permissions, stored in an
