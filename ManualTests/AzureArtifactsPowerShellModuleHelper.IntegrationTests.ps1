@@ -10,54 +10,56 @@ param
 	[string] $AzureArtifactsPersonalAccessToken = 'YourPatGoesHereButDoNotCommitItToSourceControl'
 )
 
-Set-StrictMode -Version Latest
-[string] $RepositoryRootDirectoryPath = Split-Path -Path $PSScriptRoot -Parent
-[string] $moduleFilePathToTest = (Join-Path $RepositoryRootDirectoryPath -ChildPath 'src\AzureArtifactsPowerShellModuleHelper\AzureArtifactsPowerShellModuleHelper.psm1') | Resolve-Path
-Write-Verbose "Importing the module file '$moduleFilePathToTest' to run tests against it." -Verbose
-Import-Module -Name $moduleFilePathToTest -Force
-[string] $ModuleNameBeingTested = ((Split-Path -Path $moduleFilePathToTest -Leaf) -split '\.')[0] # Filename without the extension.
+BeforeAll {
+	Set-StrictMode -Version Latest
+	[string] $RepositoryRootDirectoryPath = Split-Path -Path $PSScriptRoot -Parent
+	[string] $moduleFilePathToTest = (Join-Path $RepositoryRootDirectoryPath -ChildPath 'src\AzureArtifactsPowerShellModuleHelper\AzureArtifactsPowerShellModuleHelper.psm1') | Resolve-Path
+	Write-Verbose "Importing the module file '$moduleFilePathToTest' to run tests against it." -Verbose
+	Import-Module -Name $moduleFilePathToTest -Force
+	[string] $ModuleNameBeingTested = ((Split-Path -Path $moduleFilePathToTest -Leaf) -split '\.')[0] # Filename without the extension.
 
-###########################################################
-# You will need to update the following variables with info to pull a real package down from a real feed.
-###########################################################
-# [string] $FeedUrl = 'https://pkgs.dev.azure.com/Organization/_packaging/Feed/nuget/v2'
-[string] $FeedUrl = 'https://pkgs.dev.azure.com/iqmetrix/_packaging/iqmetrix/nuget/v2'
-[string] $PowerShellModuleName = 'IQ.DataCenter.ServerConfiguration'
-[string] $ValidOlderModuleVersionThatExists = '1.0.40'
-[string] $InvalidModuleVersionThatDoesNotExist = '1.0.99999'
-[string] $ValidModulePrereleaseVersionThatExists = '1.0.66-ci20191121T214736'
-[System.Security.SecureString] $SecurePersonalAccessToken = ($AzureArtifactsPersonalAccessToken | ConvertTo-SecureString -AsPlainText -Force)
-[PSCredential] $Credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $SecurePersonalAccessToken
-[System.Version] $MinimumRequiredPowerShellGetModuleVersion = [System.Version]::Parse('2.2.1')
+	###########################################################
+	# You will need to update the following variables with info to pull a real package down from a real feed.
+	###########################################################
+	# [string] $FeedUrl = 'https://pkgs.dev.azure.com/Organization/_packaging/Feed/nuget/v2'
+	[string] $FeedUrl = 'https://pkgs.dev.azure.com/iqmetrix/_packaging/iqmetrix/nuget/v2'
+	[string] $PowerShellModuleName = 'IQ.DataCenter.ServerConfiguration'
+	[string] $ValidOlderModuleVersionThatExists = '1.0.40'
+	[string] $InvalidModuleVersionThatDoesNotExist = '1.0.99999'
+	[string] $ValidModulePrereleaseVersionThatExists = '1.0.66-ci20191121T214736'
+	[System.Security.SecureString] $SecurePersonalAccessToken = ($AzureArtifactsPersonalAccessToken | ConvertTo-SecureString -AsPlainText -Force)
+	[PSCredential] $Credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $SecurePersonalAccessToken
+	[System.Version] $MinimumRequiredPowerShellGetModuleVersion = [System.Version]::Parse('2.2.1')
 
-function Remove-PsRepository([string] $feedUrl)
-{
-	$repositories = Get-PSRepository
-
-	# PowerShellGet v2 uses SourceLocation and v3 uses Uri for the feed URL of Get-PSRepository, so check both.
-	if ($repositories -and $repositories[0].PSObject.Properties.Name -contains 'SourceLocation')
+	function Remove-PsRepository([string] $feedUrl)
 	{
-		$repositories | Where-Object { $_.SourceLocation -ieq $feedUrl } | Unregister-PSRepository
-		Get-PSRepository | Where-Object { $_.SourceLocation -ieq $feedUrl } | Should -BeNullOrEmpty
+		$repositories = Get-PSRepository
+
+		# PowerShellGet v2 uses SourceLocation and v3 uses Uri for the feed URL of Get-PSRepository, so check both.
+		if ($repositories -and $repositories[0].PSObject.Properties.Name -contains 'SourceLocation')
+		{
+			$repositories | Where-Object { $_.SourceLocation -ieq $feedUrl } | Unregister-PSRepository
+			Get-PSRepository | Where-Object { $_.SourceLocation -ieq $feedUrl } | Should -BeNullOrEmpty
+		}
+		else
+		{
+			$repositories | Where-Object { $_.Uri -ieq $feedUrl } | Unregister-PSRepository
+			Get-PSRepository | Where-Object { $_.Uri -ieq $feedUrl } | Should -BeNullOrEmpty
+		}
 	}
-	else
+
+	function Remove-PowerShellModule([string] $powerShellModuleName)
 	{
-		$repositories | Where-Object { $_.Uri -ieq $feedUrl } | Unregister-PSRepository
-		Get-PSRepository | Where-Object { $_.Uri -ieq $feedUrl } | Should -BeNullOrEmpty
+		Remove-Module -Name $powerShellModuleName -Force -ErrorAction SilentlyContinue
+		Get-Module -Name $powerShellModuleName | Should -BeNullOrEmpty
 	}
-}
 
-function Remove-PowerShellModule([string] $powerShellModuleName)
-{
-	Remove-Module -Name $powerShellModuleName -Force -ErrorAction SilentlyContinue
-	Get-Module -Name $powerShellModuleName | Should -BeNullOrEmpty
-}
-
-function Uninstall-PowerShellModule([string] $powerShellModuleName)
-{
-	Remove-PowerShellModule -powerShellModuleName $powerShellModuleName
-	Uninstall-Module -Name $powerShellModuleName -AllVersions -Force
-	Get-Module -Name $powerShellModuleName -ListAvailable | Should -BeNullOrEmpty
+	function Uninstall-PowerShellModule([string] $powerShellModuleName)
+	{
+		Remove-PowerShellModule -powerShellModuleName $powerShellModuleName
+		Uninstall-Module -Name $powerShellModuleName -AllVersions -Force
+		Get-Module -Name $powerShellModuleName -ListAvailable | Should -BeNullOrEmpty
+	}
 }
 
 Describe 'Registering an Azure Artifacts PS Repository' {
