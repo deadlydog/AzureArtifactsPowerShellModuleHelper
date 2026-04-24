@@ -32,8 +32,19 @@ Import-Module -Name $moduleFilePathToTest -Force
 
 function Remove-PsRepository([string] $feedUrl)
 {
-	Get-PSRepository | Where-Object { $_.SourceLocation -ieq $feedUrl } | Unregister-PSRepository
-	Get-PSRepository | Where-Object { $_.SourceLocation -ieq $feedUrl } | Should -BeNullOrEmpty
+	$repositories = Get-PSRepository
+
+	# PowerShellGet v2 uses SourceLocation and v3 uses Uri for the feed URL of Get-PSRepository, so check both.
+	if ($repositories -and $repositories[0].PSObject.Properties.Name -contains 'SourceLocation')
+	{
+		$repositories | Where-Object { $_.SourceLocation -ieq $feedUrl } | Unregister-PSRepository
+		Get-PSRepository | Where-Object { $_.SourceLocation -ieq $feedUrl } | Should -BeNullOrEmpty
+	}
+	else
+	{
+		$repositories | Where-Object { $_.Uri -ieq $feedUrl } | Unregister-PSRepository
+		Get-PSRepository | Where-Object { $_.Uri -ieq $feedUrl } | Should -BeNullOrEmpty
+	}
 }
 
 function Remove-PowerShellModule([string] $powerShellModuleName)
