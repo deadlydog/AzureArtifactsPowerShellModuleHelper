@@ -1,6 +1,6 @@
 # Use this script to publish versions of the FakeModuleFor_AzureArtifactsPowerShellModuleHelper_Tests module.
 
-[string] $versionToPublish = '0.0.7' # Update this value to the version you want to publish.
+[string] $versionToPublish = '1.2.0' # Update this value to the version you want to publish.
 [string] $prereleaseVersionLabel = '' # Leave blank for no prerelease label.
 
 [string] $azureArtifactsPersonalAccessToken = $Env:AZURE_ARTIFACTS_TESTING_FEED_PAT
@@ -18,7 +18,7 @@ Write-Output "Updating the module manifest version number to '$versionToPublish'
 [string] $manifestContents = Get-Content -Path $moduleManifestFilePath -Raw
 $versionReplacedContents = [regex]::Replace($manifestContents, "ModuleVersion = '.*?'", "ModuleVersion = '$versionToPublish'")
 $prereleaseLabelReplacedContents = [regex]::Replace($versionReplacedContents, "Prerelease = '.*?'", "Prerelease = '$prereleaseVersionLabel'")
-Set-Content -Path $moduleManifestFilePath -Value $prereleaseLabelReplacedContents -Encoding UTF8
+Set-Content -Path $moduleManifestFilePath -Value $prereleaseLabelReplacedContents -Encoding UTF8 -NoNewline
 Test-ModuleManifest -Path $moduleManifestFilePath
 
 # Get the PSRepository if it exists, otherwise register it.
