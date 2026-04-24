@@ -3,7 +3,7 @@
 # In order for these tests to run successfully:
 #	- You need to use a real Azure Artifacts $FeedUrl and a real module to import from it.
 # 	- You need to use a real Azure Artifacts Personal Access Token (PAT) with package read permissions, stored in an
-# 	environment variable called AZURE_ARTIFACTS_PAT, or you can hardcode it in the $AzureArtifactsPersonalAccessToken
+# 	environment variable called AZURE_ARTIFACTS_TESTING_FEED_PAT, or you can hardcode it in the $AzureArtifactsPersonalAccessToken
 # 	variable below, but do not commit that to source control.
 # Ideally we would mock out any external/infrastructure dependencies; I just haven't had time to yet so for now hit the real dependencies.
 
@@ -15,13 +15,12 @@ BeforeAll {
 	###########################################################
 	# You will need to update the following variables with info to pull a real package down from a real feed.
 	###########################################################
-	[string] $AzureArtifactsPersonalAccessToken = $Env:AZURE_ARTIFACTS_PAT
-	# [string] $FeedUrl = 'https://pkgs.dev.azure.com/Organization/_packaging/Feed/nuget/v2'
-	[string] $FeedUrl = 'https://pkgs.dev.azure.com/iqmetrix/_packaging/iqmetrix/nuget/v2'
-	[string] $PowerShellModuleName = 'IQ.DataCenter.ServerConfiguration'
-	[string] $ValidOlderModuleVersionThatExists = '1.0.40'
+	[string] $AzureArtifactsPersonalAccessToken = $Env:AZURE_ARTIFACTS_TESTING_FEED_PAT
+	[string] $FeedUrl = 'https://pkgs.dev.azure.com/deadlydog/OpenSource/_packaging/OpenSourcePackagesFeed/nuget/v2'
+	[string] $PowerShellModuleName = 'FakeModuleFor_AzureArtifactsPowerShellModuleHelper_Tests'
+	[string] $ValidOlderModuleVersionThatExists = '1.0.2'
 	[string] $InvalidModuleVersionThatDoesNotExist = '1.0.99999'
-	[string] $ValidModulePrereleaseVersionThatExists = '1.0.66-ci20191121T214736'
+	[string] $ValidModulePrereleaseVersionThatExists = '1.0.1-alpha'
 
 	[string] $ModuleNameBeingTested = 'AzureArtifactsPowerShellModuleHelper'
 	[System.Security.SecureString] $SecurePersonalAccessToken = ($AzureArtifactsPersonalAccessToken | ConvertTo-SecureString -AsPlainText -Force)
@@ -79,7 +78,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 
 		It 'Should register a new PS repository properly when relying in PAT from environmental variable' {
 			# Arrange.
-			[string] $expectedRepository = 'AzureArtifactsPowerShellFeed'
+			[string] $expectedRepository = 'TempTestingFeed'
 			Remove-PsRepository -feedUrl $FeedUrl
 
 			# Act.
@@ -92,7 +91,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 
 		It 'Should return an existing PS repository properly when no Repository is specified' {
 			# Arrange.
-			[string] $expectedRepository = 'AzureArtifactsPowerShellFeed'
+			[string] $expectedRepository = 'TempTestingFeed'
 			Remove-PsRepository -feedUrl $FeedUrl
 			Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -Repository $expectedRepository
 
@@ -106,7 +105,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 
 		It 'Should return an existing PS repository properly when a different Repository is specified' {
 			# Arrange.
-			[string] $expectedRepository = 'AzureArtifactsPowerShellFeed'
+			[string] $expectedRepository = 'TempTestingFeed'
 			Remove-PsRepository -feedUrl $FeedUrl
 			Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -Repository $expectedRepository
 
@@ -120,7 +119,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 
 		It 'Should register a new PS repository properly when piping in the Feed URL' {
 			# Arrange.
-			[string] $expectedRepository = 'AzureArtifactsPowerShellFeed'
+			[string] $expectedRepository = 'TempTestingFeed'
 			Remove-PsRepository -feedUrl $FeedUrl
 
 			# Act.
@@ -133,7 +132,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 
 		It 'Should register a new PS repository properly when piping in the all of the parameters by property name' {
 			# Arrange.
-			[string] $expectedRepository = 'AzureArtifactsPowerShellFeed'
+			[string] $expectedRepository = 'TempTestingFeed'
 			[PSCustomObject] $params = [PSCustomObject]@{
 				FeedUrl = $FeedUrl
 				Repository = $expectedRepository
@@ -197,7 +196,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 
 	It 'Should register a new PS repository properly when passing in a valid Credential' {
 		# Arrange.
-		[string] $expectedRepository = 'AzureArtifactsPowerShellFeed'
+		[string] $expectedRepository = 'TempTestingFeed'
 		Remove-PsRepository -feedUrl $FeedUrl
 
 		# Act.
@@ -213,7 +212,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 
 		It 'Should not throw an error when credentials are not found. (Assumes the FeedUrl allows you to register it without a Credential)' {
 			# Arrange.
-			[string] $expectedRepository = 'AzureArtifactsPowerShellFeed'
+			[string] $expectedRepository = 'TempTestingFeed'
 			Remove-PsRepository -feedUrl $FeedUrl
 
 			# Act.
