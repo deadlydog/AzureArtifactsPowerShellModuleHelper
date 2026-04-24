@@ -59,6 +59,20 @@ BeforeAll {
 	}
 }
 
+Describe 'Tests setup' {
+	It 'Should have the Azure Artifacts Personal Access Token available' {
+		$AzureArtifactsPersonalAccessToken | Should -Not -BeNullOrEmpty
+	}
+
+	It 'Should have the Feed URL available' {
+		$FeedUrl | Should -Not -BeNullOrEmpty
+	}
+
+	It 'Should have the PowerShell module name to test with available' {
+		$PowerShellModuleName | Should -Not -BeNullOrEmpty
+	}
+}
+
 Describe 'Registering an Azure Artifacts PS Repository' {
 	Context 'When relying on retrieving the Azure Artifacts PAT from the environment variable that exists' {
 		Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
