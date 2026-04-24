@@ -2,6 +2,9 @@
 # This means that these tests will actually reach out to the specified $FeedUrl and connect/authenticate against it.
 # In order for these tests to run successfully:
 #	- You need to use a real Azure Artifacts $FeedUrl and a real module to import from it.
+# 	- You need to use a real Azure Artifacts Personal Access Token (PAT) with package read permissions, stored in an
+# 	environment variable called AZURE_ARTIFACTS_PAT, or you can hardcode it in the $AzureArtifactsPersonalAccessToken
+# 	variable below, but do not commit that to source control.
 # Ideally we would mock out any external/infrastructure dependencies; I just haven't had time to yet so for now hit the real dependencies.
 
 using module '.\..\src\AzureArtifactsPowerShellModuleHelper\AzureArtifactsPowerShellModuleHelper.psm1'
@@ -12,7 +15,7 @@ BeforeAll {
 	###########################################################
 	# You will need to update the following variables with info to pull a real package down from a real feed.
 	###########################################################
-	[string] $AzureArtifactsPersonalAccessToken = 'YourPatGoesHereButDoNotCommitItToSourceControl'
+	[string] $AzureArtifactsPersonalAccessToken = $Env:AZURE_ARTIFACTS_PAT
 	# [string] $FeedUrl = 'https://pkgs.dev.azure.com/Organization/_packaging/Feed/nuget/v2'
 	[string] $FeedUrl = 'https://pkgs.dev.azure.com/iqmetrix/_packaging/iqmetrix/nuget/v2'
 	[string] $PowerShellModuleName = 'IQ.DataCenter.ServerConfiguration'
