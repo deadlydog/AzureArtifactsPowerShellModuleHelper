@@ -4,29 +4,23 @@
 #	- You need to use a real Azure Artifacts $FeedUrl and a real module to import from it.
 # Ideally we would mock out any external/infrastructure dependencies; I just haven't had time to yet so for now hit the real dependencies.
 
-param
-(
-	[Parameter(Mandatory = $false, HelpMessage = 'The Personal Access Token to use to connect to the Azure Artifacts feed.')]
-	[string] $AzureArtifactsPersonalAccessToken = 'YourPatGoesHereButDoNotCommitItToSourceControl'
-)
+using module '.\..\src\AzureArtifactsPowerShellModuleHelper\AzureArtifactsPowerShellModuleHelper.psm1'
 
 BeforeAll {
 	Set-StrictMode -Version Latest
-	[string] $RepositoryRootDirectoryPath = Split-Path -Path $PSScriptRoot -Parent
-	[string] $moduleFilePathToTest = (Join-Path $RepositoryRootDirectoryPath -ChildPath 'src\AzureArtifactsPowerShellModuleHelper\AzureArtifactsPowerShellModuleHelper.psm1') | Resolve-Path
-	Write-Verbose "Importing the module file '$moduleFilePathToTest' to run tests against it." -Verbose
-	Import-Module -Name $moduleFilePathToTest -Force
-	[string] $ModuleNameBeingTested = ((Split-Path -Path $moduleFilePathToTest -Leaf) -split '\.')[0] # Filename without the extension.
 
 	###########################################################
 	# You will need to update the following variables with info to pull a real package down from a real feed.
 	###########################################################
+	[string] $AzureArtifactsPersonalAccessToken = 'YourPatGoesHereButDoNotCommitItToSourceControl'
 	# [string] $FeedUrl = 'https://pkgs.dev.azure.com/Organization/_packaging/Feed/nuget/v2'
 	[string] $FeedUrl = 'https://pkgs.dev.azure.com/iqmetrix/_packaging/iqmetrix/nuget/v2'
 	[string] $PowerShellModuleName = 'IQ.DataCenter.ServerConfiguration'
 	[string] $ValidOlderModuleVersionThatExists = '1.0.40'
 	[string] $InvalidModuleVersionThatDoesNotExist = '1.0.99999'
 	[string] $ValidModulePrereleaseVersionThatExists = '1.0.66-ci20191121T214736'
+
+	[string] $ModuleNameBeingTested = 'AzureArtifactsPowerShellModuleHelper'
 	[System.Security.SecureString] $SecurePersonalAccessToken = ($AzureArtifactsPersonalAccessToken | ConvertTo-SecureString -AsPlainText -Force)
 	[PSCredential] $Credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $SecurePersonalAccessToken
 	[System.Version] $MinimumRequiredPowerShellGetModuleVersion = [System.Version]::Parse('2.2.1')
