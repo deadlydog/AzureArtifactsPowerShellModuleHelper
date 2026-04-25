@@ -111,6 +111,8 @@ jobs:
 
       - name: Run Pester tests on Windows PowerShell to ensure backward compatibility
         shell: powershell
+        env:
+          AZURE_ARTIFACTS_TESTING_FEED_PAT: ${{ secrets.DEADLYDOG_OPENSOURCEPACKAGESFEED_AZDO_PAT }}
         run: |
           Write-Output "Pester version being used:"
           Import-Module -Name Pester
@@ -130,6 +132,8 @@ jobs:
 
       - name: Run Pester tests and generate code coverage report
         shell: pwsh
+        env:
+          AZURE_ARTIFACTS_TESTING_FEED_PAT: ${{ secrets.DEADLYDOG_OPENSOURCEPACKAGESFEED_AZDO_PAT }}
         run: |
           Write-Output "Pester version being used:"
           Import-Module -Name Pester

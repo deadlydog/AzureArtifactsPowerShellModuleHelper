@@ -82,6 +82,8 @@ jobs:
 
       - name: Run smoke tests
         shell: pwsh
+        env:
+          AZURE_ARTIFACTS_TESTING_FEED_PAT: ${{ secrets.DEADLYDOG_OPENSOURCEPACKAGESFEED_AZDO_PAT }}
         run: |
           [string] $smokeTestsScriptPath = "$Env:artifactsDirectoryPath/Invoke-SmokeTests.ps1"
 
@@ -123,6 +125,8 @@ jobs:
 
       - name: Run smoke tests
         shell: powershell
+        env:
+          AZURE_ARTIFACTS_TESTING_FEED_PAT: ${{ secrets.DEADLYDOG_OPENSOURCEPACKAGESFEED_AZDO_PAT }}
         run: |
           [string] $smokeTestsScriptPath = "$Env:artifactsDirectoryPath/Invoke-SmokeTests.ps1"
 
@@ -189,6 +193,8 @@ jobs:
 
       - name: Run smoke tests
         shell: pwsh
+        env:
+          AZURE_ARTIFACTS_TESTING_FEED_PAT: ${{ secrets.DEADLYDOG_OPENSOURCEPACKAGESFEED_AZDO_PAT }}
         run: |
           [string] $smokeTestsScriptPath = "$Env:artifactsDirectoryPath/Invoke-SmokeTests.ps1"
 
@@ -230,6 +236,8 @@ jobs:
 
       - name: Run smoke tests
         shell: powershell
+        env:
+          AZURE_ARTIFACTS_TESTING_FEED_PAT: ${{ secrets.DEADLYDOG_OPENSOURCEPACKAGESFEED_AZDO_PAT }}
         run: |
           [string] $smokeTestsScriptPath = "$Env:artifactsDirectoryPath/Invoke-SmokeTests.ps1"
 
