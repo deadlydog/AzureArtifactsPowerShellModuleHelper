@@ -8,7 +8,7 @@
 # 	variable below, but do not commit that to source control.
 # Ideally we would mock out any external/infrastructure dependencies; I just haven't had time to yet so for now hit the real dependencies.
 
-using module '.\..\src\AzureArtifactsPowerShellModuleHelper\AzureArtifactsPowerShellModuleHelper.psm1'
+using module '.\AzureArtifactsPowerShellModuleHelper.psm1'
 
 BeforeAll {
 	Set-StrictMode -Version Latest
