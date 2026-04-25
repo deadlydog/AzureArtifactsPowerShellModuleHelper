@@ -17,7 +17,7 @@ BeforeAll {
 	# You will need to update the following variables with info to pull a real package down from a real feed.
 	###########################################################
 	[string] $AzureArtifactsPersonalAccessToken = $Env:AZURE_ARTIFACTS_TESTING_FEED_PAT
-	[string] $FeedUrl = 'https://pkgs.dev.azure.com/deadlydog/OpenSource/_packaging/OpenSourcePackagesFeed/nuget/v2'
+	[string] $FeedUrl = 'https://pkgs.dev.azure.com/deadlydog/2fdacc85-2f97-401e-bc68-69090c712dea/_packaging/AzureArtifactsPowerShellModuleHelper-Tests/nuget/v2'
 	[string] $PowerShellModuleName = 'FakeModuleFor_AzureArtifactsPowerShellModuleHelper_Tests'
 	[string] $ValidOlderModuleVersionThatExists = '1.0.2'
 	[string] $InvalidModuleVersionThatDoesNotExist = '1.0.99999'

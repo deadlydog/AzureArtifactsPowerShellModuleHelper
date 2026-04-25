@@ -1,10 +1,10 @@
 # Use this script to publish versions of the FakeModuleFor_AzureArtifactsPowerShellModuleHelper_Tests module.
 
-[string] $versionToPublish = '1.2.0' # Update this value to the version you want to publish.
+[string] $versionToPublish = '1.3.0' # Update this value to the version you want to publish.
 [string] $prereleaseVersionLabel = '' # Leave blank for no prerelease label.
 
 [string] $azureArtifactsPersonalAccessToken = $Env:AZURE_ARTIFACTS_TESTING_FEED_PAT
-[string] $feedUrl = 'https://pkgs.dev.azure.com/deadlydog/OpenSource/_packaging/OpenSourcePackagesFeed/nuget/v3/index.json'
+[string] $feedUrl = 'https://pkgs.dev.azure.com/deadlydog/2fdacc85-2f97-401e-bc68-69090c712dea/_packaging/AzureArtifactsPowerShellModuleHelper-Tests/nuget/v3/index.json'
 [string] $moduleName = 'FakeModuleFor_AzureArtifactsPowerShellModuleHelper_Tests'
 [string] $moduleDirectoryPath = $PSScriptRoot
 [string] $moduleManifestFilePath = Join-Path -Path $moduleDirectoryPath -ChildPath "$moduleName.psd1"
