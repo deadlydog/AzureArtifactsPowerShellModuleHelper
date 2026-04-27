@@ -140,6 +140,51 @@
 			"problemMatcher": [
 				"$func-powershell-watch"
 			]
+		},
+		{
+			"label": "Build Docker image for Pester tests",
+			"type": "shell",
+			"options": {
+				"shell": {
+					"executable": "pwsh",
+					"args": [
+						"-NoProfile",
+						"-Command"
+					]
+				}
+			},
+			"command": "docker build -t pester-tests:latest .",
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"clear": true
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Run Pester tests in Docker",
+			"type": "shell",
+			"options": {
+				"shell": {
+					"executable": "pwsh",
+					"args": [
+						"-NoProfile",
+						"-Command"
+					]
+				}
+			},
+			"command": "docker run --rm -e AZURE_ARTIFACTS_TESTING_FEED_PAT=$Env:AZURE_ARTIFACTS_TESTING_FEED_PAT pester-tests:latest",
+			"dependsOn": [
+				"Build Docker image for Pester tests"
+			],
+			"group": "test",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"clear": true
+			},
+			"problemMatcher": []
 		}
 	]
 }
