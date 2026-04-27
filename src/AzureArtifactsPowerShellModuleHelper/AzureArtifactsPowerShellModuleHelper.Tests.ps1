@@ -28,12 +28,12 @@ BeforeAll {
 	[PSCredential] $Credential = New-Object System.Management.Automation.PSCredential 'Username@DoesNotMatter.com', $SecurePersonalAccessToken
 	[System.Version] $MinimumRequiredPowerShellGetModuleVersion = [System.Version]::Parse('2.2.1')
 
-	function Remove-PsRepository([string] $feedUrl)
+	function Remove-PsRepositoryAndPackageSource([string] $feedUrl)
 	{
 		function Get-RepositoriesForFeed([string] $feedUrlToFind)
 		{
 			# PowerShellGet v2 uses SourceLocation and v3 uses Uri for the feed URL of Get-PSRepository, so check both.
-			@(Get-PSRepository) | Where-Object {
+			Get-PSRepository | Where-Object {
 				(($_.PSObject.Properties.Name -contains 'SourceLocation') -and ($_.SourceLocation -ieq $feedUrlToFind)) -or
 				(($_.PSObject.Properties.Name -contains 'Uri') -and ($_.Uri -ieq $feedUrlToFind))
 			}
@@ -41,52 +41,26 @@ BeforeAll {
 
 		function Get-PackageSourcesForFeed([string] $feedUrlToFind)
 		{
-			@(Get-PackageSource) | Where-Object {
-				$_.Location -ieq $feedUrlToFind
-			}
+			Get-PackageSource | Where-Object { $_.Location -ieq $feedUrlToFind }
 		}
 
-		# Repository registrations can differ across shells/profiles; re-query and remove by name to ensure cleanup.
-		[int] $maxAttempts = 3
-		for ([int] $attempt = 1; $attempt -le $maxAttempts; $attempt++)
-		{
-			$repositoriesForFeed = @(Get-RepositoriesForFeed -feedUrlToFind $feedUrl)
-			if ($repositoriesForFeed.Count -eq 0)
-			{
-				break
-			}
-
-			$repositoryNames = $repositoriesForFeed |
-				Select-Object -ExpandProperty Name -Unique |
-				Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
-
-			foreach ($repositoryName in $repositoryNames)
-			{
-				Unregister-PSRepository -Name $repositoryName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
-			}
+		Get-RepositoriesForFeed -feedUrlToFind $feedUrl |
+			Select-Object -ExpandProperty Name -Unique |
+			Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+			ForEach-Object {
+				Unregister-PSRepository -Name $_ -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
 		}
 
-		@(Get-RepositoriesForFeed -feedUrlToFind $feedUrl) | Should -BeNullOrEmpty
+		Get-RepositoriesForFeed -feedUrlToFind $feedUrl | Should -BeNullOrEmpty
 
-		for ([int] $attempt = 1; $attempt -le $maxAttempts; $attempt++)
-		{
-			$packageSourcesForFeed = @(Get-PackageSourcesForFeed -feedUrlToFind $feedUrl)
-			if ($packageSourcesForFeed.Count -eq 0)
-			{
-				break
+		Get-PackageSourcesForFeed -feedUrlToFind $feedUrl |
+			Select-Object -ExpandProperty Name -Unique |
+			Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+			ForEach-Object {
+				Unregister-PackageSource -Name $_ -ProviderName NuGet -ErrorAction SilentlyContinue -WarningAction SilentlyContinue > $null
 			}
 
-			$packageSourceNames = $packageSourcesForFeed |
-				Select-Object -ExpandProperty Name -Unique |
-				Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
-
-			foreach ($packageSourceName in $packageSourceNames)
-			{
-				Unregister-PackageSource -Name $packageSourceName -ProviderName NuGet -ErrorAction SilentlyContinue -WarningAction SilentlyContinue > $null
-			}
-		}
-
-		@(Get-PackageSourcesForFeed -feedUrlToFind $feedUrl) | Should -BeNullOrEmpty
+		Get-PackageSourcesForFeed -feedUrlToFind $feedUrl | Should -BeNullOrEmpty
 	}
 
 	function Remove-PowerShellModule([string] $powerShellModuleName)
@@ -126,7 +100,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 		It 'Should register a new PS repository properly when relying on PAT from environmental variable' {
 			# Arrange.
 			[string] $expectedRepository = 'TempTestingFeed'
-			Remove-PsRepository -feedUrl $FeedUrl
+			Remove-PsRepositoryAndPackageSource -feedUrl $FeedUrl
 
 			# Act.
 			[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -Repository $expectedRepository
@@ -139,7 +113,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 		It 'Should return an existing PS repository properly when no Repository is specified' {
 			# Arrange.
 			[string] $expectedRepository = 'TempTestingFeed'
-			Remove-PsRepository -feedUrl $FeedUrl
+			Remove-PsRepositoryAndPackageSource -feedUrl $FeedUrl
 			Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -Repository $expectedRepository
 
 			# Act.
@@ -153,7 +127,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 		It 'Should return an existing PS repository properly when a different Repository is specified' {
 			# Arrange.
 			[string] $expectedRepository = 'TempTestingFeed'
-			Remove-PsRepository -feedUrl $FeedUrl
+			Remove-PsRepositoryAndPackageSource -feedUrl $FeedUrl
 			Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -Repository $expectedRepository
 
 			# Act.
@@ -167,7 +141,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 		It 'Should register a new PS repository properly when piping in the Feed URL' {
 			# Arrange.
 			[string] $expectedRepository = 'TempTestingFeed'
-			Remove-PsRepository -feedUrl $FeedUrl
+			Remove-PsRepositoryAndPackageSource -feedUrl $FeedUrl
 
 			# Act.
 			[string] $repository = ($FeedUrl | Register-AzureArtifactsPSRepository -Repository $expectedRepository)
@@ -186,7 +160,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 				Credential = $Credential
 				Scope = 'CurrentUser'
 			}
-			Remove-PsRepository -feedUrl $FeedUrl
+			Remove-PsRepositoryAndPackageSource -feedUrl $FeedUrl
 
 			# Act.
 			[string] $repository = ($params | Register-AzureArtifactsPSRepository)
@@ -244,7 +218,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 	It 'Should register a new PS repository properly when passing in a valid Credential' {
 		# Arrange.
 		[string] $expectedRepository = 'TempTestingFeed'
-		Remove-PsRepository -feedUrl $FeedUrl
+		Remove-PsRepositoryAndPackageSource -feedUrl $FeedUrl
 
 		# Act.
 		[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -Repository $expectedRepository -Credential $Credential
@@ -262,7 +236,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 		It 'Should not throw an error when credentials are not found. (Assumes the FeedUrl allows you to register it without a Credential)' {
 			# Arrange.
 			[string] $expectedRepository = 'TempTestingFeed'
-			Remove-PsRepository -feedUrl $FeedUrl
+			Remove-PsRepositoryAndPackageSource -feedUrl $FeedUrl
 
 			# Act.
 			[string] $repository = Register-AzureArtifactsPSRepository -FeedUrl $FeedUrl -Repository $expectedRepository
