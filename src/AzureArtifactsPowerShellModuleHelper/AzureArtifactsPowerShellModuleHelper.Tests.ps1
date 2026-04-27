@@ -30,19 +30,63 @@ BeforeAll {
 
 	function Remove-PsRepository([string] $feedUrl)
 	{
-		$repositories = Get-PSRepository
+		function Get-RepositoriesForFeed([string] $feedUrlToFind)
+		{
+			# PowerShellGet v2 uses SourceLocation and v3 uses Uri for the feed URL of Get-PSRepository, so check both.
+			@(Get-PSRepository) | Where-Object {
+				(($_.PSObject.Properties.Name -contains 'SourceLocation') -and ($_.SourceLocation -ieq $feedUrlToFind)) -or
+				(($_.PSObject.Properties.Name -contains 'Uri') -and ($_.Uri -ieq $feedUrlToFind))
+			}
+		}
 
-		# PowerShellGet v2 uses SourceLocation and v3 uses Uri for the feed URL of Get-PSRepository, so check both.
-		if ($repositories -and $repositories[0].PSObject.Properties.Name -contains 'SourceLocation')
+		function Get-PackageSourcesForFeed([string] $feedUrlToFind)
 		{
-			$repositories | Where-Object { $_.SourceLocation -ieq $feedUrl } | Unregister-PSRepository
-			Get-PSRepository | Where-Object { $_.SourceLocation -ieq $feedUrl } | Should -BeNullOrEmpty
+			@(Get-PackageSource) | Where-Object {
+				$_.Location -ieq $feedUrlToFind
+			}
 		}
-		else
+
+		# Repository registrations can differ across shells/profiles; re-query and remove by name to ensure cleanup.
+		[int] $maxAttempts = 3
+		for ([int] $attempt = 1; $attempt -le $maxAttempts; $attempt++)
 		{
-			$repositories | Where-Object { $_.Uri -ieq $feedUrl } | Unregister-PSRepository
-			Get-PSRepository | Where-Object { $_.Uri -ieq $feedUrl } | Should -BeNullOrEmpty
+			$repositoriesForFeed = @(Get-RepositoriesForFeed -feedUrlToFind $feedUrl)
+			if ($repositoriesForFeed.Count -eq 0)
+			{
+				break
+			}
+
+			$repositoryNames = $repositoriesForFeed |
+				Select-Object -ExpandProperty Name -Unique |
+				Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+
+			foreach ($repositoryName in $repositoryNames)
+			{
+				Unregister-PSRepository -Name $repositoryName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+			}
 		}
+
+		@(Get-RepositoriesForFeed -feedUrlToFind $feedUrl) | Should -BeNullOrEmpty
+
+		for ([int] $attempt = 1; $attempt -le $maxAttempts; $attempt++)
+		{
+			$packageSourcesForFeed = @(Get-PackageSourcesForFeed -feedUrlToFind $feedUrl)
+			if ($packageSourcesForFeed.Count -eq 0)
+			{
+				break
+			}
+
+			$packageSourceNames = $packageSourcesForFeed |
+				Select-Object -ExpandProperty Name -Unique |
+				Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+
+			foreach ($packageSourceName in $packageSourceNames)
+			{
+				Unregister-PackageSource -Name $packageSourceName -ProviderName NuGet -ErrorAction SilentlyContinue -WarningAction SilentlyContinue > $null
+			}
+		}
+
+		@(Get-PackageSourcesForFeed -feedUrlToFind $feedUrl) | Should -BeNullOrEmpty
 	}
 
 	function Remove-PowerShellModule([string] $powerShellModuleName)
