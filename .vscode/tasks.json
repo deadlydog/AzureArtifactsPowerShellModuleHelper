@@ -20,7 +20,7 @@
 				"isDefault": true
 			},
 			"dependsOn": [
-				"Run all Pester tests"
+				"Run Pester tests in Docker"
 			]
 		},
 		{
