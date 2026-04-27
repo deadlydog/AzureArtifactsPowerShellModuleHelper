@@ -275,7 +275,7 @@ Describe 'Finding a PowerShell module from Azure Artifacts' {
 			[scriptblock] $action = { Find-AzureArtifactsModule -Name $PowerShellModuleName -Repository $repository -ErrorAction Stop }
 
 			# Act and Assert.
-			$action | Should -Throw "No match was found for the specified search criteria and module name '$PowerShellModuleName'. Try Get-PSRepository to see all available registered module repositories."
+			$action | Should -Throw "Unable to find repository '$repository'. Use Get-PSRepository to see all available repositories."
 		}
 	}
 
