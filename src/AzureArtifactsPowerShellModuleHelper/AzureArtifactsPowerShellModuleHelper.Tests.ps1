@@ -79,7 +79,7 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 			Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
 		}
 
-		It 'Should register a new PS repository properly when relying in PAT from environmental variable' {
+		It 'Should register a new PS repository properly when relying on PAT from environmental variable' {
 			# Arrange.
 			[string] $expectedRepository = 'TempTestingFeed'
 			Remove-PsRepository -feedUrl $FeedUrl
