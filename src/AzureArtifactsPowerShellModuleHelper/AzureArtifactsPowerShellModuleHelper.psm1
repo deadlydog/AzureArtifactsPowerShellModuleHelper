@@ -91,16 +91,12 @@ function Register-AzureArtifactsPSRepository
 			$psRepositories = Get-PSRepository
 
 			# PowerShellGet v2 uses SourceLocation and v3 uses Uri for the feed URL of Get-PSRepository, so check both.
-			[PSCustomObject] $existingPsRepositoryForFeed = $null
-			if ($psRepositories -and $psRepositories[0].PSObject.Properties.Name -contains 'SourceLocation') {
-				$existingPsRepositoryForFeed = $psRepositories |
-					Where-Object { $_.SourceLocation -ieq $feedUrl } |
-					Select-Object -First 1
-			} else {
-				$existingPsRepositoryForFeed = $psRepositories |
-					Where-Object { $_.Uri -ieq $feedUrl } |
-					Select-Object -First 1
-			}
+			[PSCustomObject] $existingPsRepositoryForFeed = $psRepositories |
+				Where-Object {
+					(($_.PSObject.Properties.Name -contains 'SourceLocation') -and ($_.SourceLocation -ieq $feedUrl)) -or
+					(($_.PSObject.Properties.Name -contains 'Uri') -and ($_.Uri -ieq $feedUrl))
+				} |
+				Select-Object -First 1
 
 			[bool] $psRepositoryIsAlreadyRegistered = ($null -ne $existingPsRepositoryForFeed)
 			if ($psRepositoryIsAlreadyRegistered)
