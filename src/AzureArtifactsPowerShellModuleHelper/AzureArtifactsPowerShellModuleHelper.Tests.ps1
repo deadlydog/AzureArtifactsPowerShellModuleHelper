@@ -75,7 +75,9 @@ Describe 'Tests setup' {
 
 Describe 'Registering an Azure Artifacts PS Repository' {
 	Context 'When relying on retrieving the Azure Artifacts PAT from the environment variable that exists' {
-		Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
+		BeforeEach {
+			Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
+		}
 
 		It 'Should register a new PS repository properly when relying in PAT from environmental variable' {
 			# Arrange.
@@ -209,7 +211,9 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 	}
 
 	Context 'When connecting to a feed without using a Credential' {
-		Mock Get-AzureArtifactsCredential { return $null } -ModuleName $ModuleNameBeingTested
+		BeforeEach {
+			Mock Get-AzureArtifactsCredential { return $null } -ModuleName $ModuleNameBeingTested
+		}
 
 		It 'Should not throw an error when credentials are not found. (Assumes the FeedUrl allows you to register it without a Credential)' {
 			# Arrange.
@@ -228,7 +232,9 @@ Describe 'Registering an Azure Artifacts PS Repository' {
 
 Describe 'Finding a PowerShell module from Azure Artifacts' {
 	Context 'When relying on retrieving the Azure Artifacts PAT from the environment variable that exists' {
-		Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
+		BeforeEach {
+			Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
+		}
 
 		It 'Should find the module properly' {
 			# Arrange.
@@ -241,7 +247,9 @@ Describe 'Finding a PowerShell module from Azure Artifacts' {
 	}
 
 	Context 'When connecting to a feed without using a Credential' {
-		Mock Get-AzureArtifactsCredential { return $null } -ModuleName $ModuleNameBeingTested
+		BeforeEach {
+			Mock Get-AzureArtifactsCredential { return $null } -ModuleName $ModuleNameBeingTested
+		}
 
 		It 'Should throw an exception' {
 			# Arrange.
@@ -267,7 +275,9 @@ Describe 'Finding a PowerShell module from Azure Artifacts' {
 
 Describe 'Installing a PowerShell module from Azure Artifacts' {
 	Context 'When relying on retrieving the Azure Artifacts PAT from the environment variable that exists' {
-		Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
+		BeforeEach {
+			Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
+		}
 
 		It 'Should install the module properly' {
 			# Arrange.
@@ -284,7 +294,9 @@ Describe 'Installing a PowerShell module from Azure Artifacts' {
 
 Describe 'Updating a PowerShell module from Azure Artifacts' {
 	Context 'When relying on retrieving the Azure Artifacts PAT from the environment variable that exists' {
-		Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
+		BeforeEach {
+			Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
+		}
 
 		It 'Should update the module properly when already installed, resulting in 2 versions being installed' {
 			# Arrange.
@@ -304,7 +316,9 @@ Describe 'Updating a PowerShell module from Azure Artifacts' {
 
 Describe 'Installing-and-Updating a PowerShell module from Azure Artifacts' {
 	Context 'When relying on retrieving the Azure Artifacts PAT from the environment variable that exists' {
-		Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
+		BeforeEach {
+			Mock Get-SecurePersonalAccessTokenFromEnvironmentVariable { return $SecurePersonalAccessToken } -ModuleName $ModuleNameBeingTested
+		}
 
 		It 'Should install the module properly' {
 			# Arrange.
