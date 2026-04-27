@@ -49,7 +49,7 @@ BeforeAll {
 			Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
 			ForEach-Object {
 				Unregister-PSRepository -Name $_ -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
-		}
+			}
 
 		Get-RepositoriesForFeed -feedUrlToFind $feedUrl | Should -BeNullOrEmpty
 
