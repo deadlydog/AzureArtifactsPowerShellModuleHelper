@@ -20,6 +20,7 @@
 		"unshown"
 	],
 	"ignoreWords": [
+		"Deadlydog",
 		"devcontainer",
 		"pkgs",
 		"pwsh"

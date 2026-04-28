@@ -111,10 +111,18 @@ jobs:
 
       - name: Run Pester tests on Windows PowerShell to ensure backward compatibility
         shell: powershell
+        env:
+          AZURE_ARTIFACTS_TESTING_FEED_PAT: ${{ secrets.DEADLYDOG_OPENSOURCEPACKAGESFEED_AZDO_PAT }}
         run: |
           Write-Output "Pester version being used:"
           Import-Module -Name Pester
           Get-Module -Name Pester
+
+          Write-Output "PowerShell version being used:"
+          $PSVersionTable
+
+          Write-Output "Host information:"
+          $host
 
           Write-Output "Running all Pester tests in the repo:"
           $pesterConfig = New-PesterConfiguration @{
@@ -130,10 +138,18 @@ jobs:
 
       - name: Run Pester tests and generate code coverage report
         shell: pwsh
+        env:
+          AZURE_ARTIFACTS_TESTING_FEED_PAT: ${{ secrets.DEADLYDOG_OPENSOURCEPACKAGESFEED_AZDO_PAT }}
         run: |
           Write-Output "Pester version being used:"
           Import-Module -Name Pester
           Get-Module -Name Pester
+
+          Write-Output "PowerShell version being used:"
+          $PSVersionTable
+
+          Write-Output "Host information:"
+          $host
 
           Write-Output "Running all Pester tests in the repo:"
           $pesterConfig = New-PesterConfiguration @{
