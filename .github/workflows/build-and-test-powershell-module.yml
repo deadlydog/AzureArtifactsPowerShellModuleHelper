@@ -118,6 +118,12 @@ jobs:
           Import-Module -Name Pester
           Get-Module -Name Pester
 
+          Write-Output "PowerShell version being used:"
+          $PSVersionTable
+
+          Write-Output "Host information:"
+          $host
+
           Write-Output "Running all Pester tests in the repo:"
           $pesterConfig = New-PesterConfiguration @{
             Output = @{ Verbosity = 'Detailed' }
